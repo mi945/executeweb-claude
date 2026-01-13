@@ -34,7 +34,9 @@ export default function NudgeNotifications() {
 
   const userProfile = profileData?.profiles?.find((p: any) => p.id === user?.id);
   const userTaskIds = new Set(
-    userProfile?.executions?.map((e: any) => e.task.id) || []
+    userProfile?.executions
+      ?.filter((e: any) => e.task?.id)
+      .map((e: any) => e.task.id) || []
   );
 
   useEffect(() => {
@@ -43,6 +45,9 @@ export default function NudgeNotifications() {
     // Find new completions since last check
     const newCompletions = (data.executions as any[])
       .filter((e) => {
+        // Must have task data
+        if (!e.task?.id || !e.task?.title) return false;
+
         // Must be completed
         if (!e.completed || !e.completedAt) return false;
 
@@ -50,7 +55,7 @@ export default function NudgeNotifications() {
         if (e.completedAt <= lastCheckTime) return false;
 
         // Must be by someone else
-        if (e.user.id === user?.id) return false;
+        if (e.user?.id === user?.id) return false;
 
         // Must be a task the current user has also executed
         if (!userTaskIds.has(e.task.id)) return false;
@@ -60,7 +65,7 @@ export default function NudgeNotifications() {
       .map((e) => ({
         id: e.id,
         taskTitle: e.task.title,
-        userName: e.user.name || 'Someone',
+        userName: e.user?.name || 'Someone',
         timestamp: e.completedAt,
       }));
 
