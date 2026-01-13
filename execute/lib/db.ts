@@ -26,6 +26,12 @@ const schema = i.schema({
       dailyStreak: i.number(),
       lastCompletionDate: i.number().optional(),
     }),
+
+    // Comments on tasks
+    comments: i.entity({
+      text: i.string(),
+      createdAt: i.number(),
+    }),
   },
   links: {
     // Task creator relationship (one-to-many)
@@ -67,6 +73,34 @@ const schema = i.schema({
         on: 'executions',
         has: 'one',
         label: 'user',
+      },
+    },
+
+    // Task comments relationship (one-to-many)
+    taskComments: {
+      forward: {
+        on: 'tasks',
+        has: 'many',
+        label: 'comments',
+      },
+      reverse: {
+        on: 'comments',
+        has: 'one',
+        label: 'task',
+      },
+    },
+
+    // User comments relationship (one-to-many)
+    userComments: {
+      forward: {
+        on: 'profiles',
+        has: 'many',
+        label: 'comments',
+      },
+      reverse: {
+        on: 'comments',
+        has: 'one',
+        label: 'author',
       },
     },
   },
