@@ -31,6 +31,7 @@ const schema = i.schema({
     comments: i.entity({
       text: i.string(),
       createdAt: i.number(),
+      mentionedUser: i.string().optional(), // @username for reply-to-reply
     }),
   },
   links: {
@@ -101,6 +102,20 @@ const schema = i.schema({
         on: 'comments',
         has: 'one',
         label: 'author',
+      },
+    },
+
+    // Comment replies relationship (self-referential one-to-many)
+    commentReplies: {
+      forward: {
+        on: 'comments',
+        has: 'many',
+        label: 'replies',
+      },
+      reverse: {
+        on: 'comments',
+        has: 'one',
+        label: 'parentComment',
       },
     },
   },
