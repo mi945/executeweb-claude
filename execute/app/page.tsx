@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { useRouter } from 'next/navigation';
 import db from '@/lib/db';
 import AuthForm from '@/components/AuthForm';
 import TaskFeed from '@/components/TaskFeed';
@@ -10,6 +11,7 @@ import UserProfile from '@/components/UserProfile';
 import NudgeNotifications from '@/components/NudgeNotifications';
 
 export default function Home() {
+  const router = useRouter();
   const [activeTab, setActiveTab] = useState<'discover' | 'actions' | 'pulse'>(
     'discover'
   );
