@@ -30,6 +30,13 @@ export default function TaskFeed() {
   const [imagePreview, setImagePreview] = useState<string>('');
   const [isUploading, setIsUploading] = useState(false);
 
+  // Update preview when URL is entered
+  useEffect(() => {
+    if (newTask.imageUrl && newTask.imageUrl.startsWith('http')) {
+      setImagePreview(newTask.imageUrl);
+    }
+  }, [newTask.imageUrl]);
+
   // Query all tasks with their executions
   const { data } = db.useQuery({
     tasks: {
@@ -196,15 +203,56 @@ export default function TaskFeed() {
             rows={3}
             required
           />
-          <input
-            type="url"
-            placeholder="Image URL (optional)"
-            value={newTask.imageUrl}
-            onChange={(e) =>
-              setNewTask({ ...newTask, imageUrl: e.target.value })
-            }
-            className="w-full px-4 py-2 rounded-xl border-2 border-gray-200 focus:border-purple-500 focus:outline-none"
-          />
+
+          {/* Image Upload Section */}
+          <div className="space-y-2">
+            <label className="block text-sm font-medium text-gray-700">
+              Image (optional)
+            </label>
+
+            {imagePreview ? (
+              <div className="relative">
+                <img
+                  src={imagePreview}
+                  alt="Preview"
+                  className="w-full h-48 object-cover rounded-xl"
+                />
+                <button
+                  type="button"
+                  onClick={clearImage}
+                  className="absolute top-2 right-2 bg-red-500 text-white px-3 py-1 rounded-lg text-sm hover:bg-red-600 transition-colors"
+                >
+                  Remove
+                </button>
+              </div>
+            ) : (
+              <div className="space-y-2">
+                <input
+                  type="file"
+                  accept="image/*"
+                  onChange={handleImageUpload}
+                  disabled={isUploading}
+                  className="w-full px-4 py-2 rounded-xl border-2 border-gray-200 focus:border-purple-500 focus:outline-none file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-purple-50 file:text-purple-700 hover:file:bg-purple-100"
+                />
+                <div className="text-center text-sm text-gray-500">
+                  or
+                </div>
+                <input
+                  type="url"
+                  placeholder="Enter image URL"
+                  value={newTask.imageUrl}
+                  onChange={(e) =>
+                    setNewTask({ ...newTask, imageUrl: e.target.value })
+                  }
+                  className="w-full px-4 py-2 rounded-xl border-2 border-gray-200 focus:border-purple-500 focus:outline-none"
+                />
+              </div>
+            )}
+            {isUploading && (
+              <div className="text-sm text-purple-600">Uploading image...</div>
+            )}
+          </div>
+
           <input
             type="url"
             placeholder="External link (optional)"
