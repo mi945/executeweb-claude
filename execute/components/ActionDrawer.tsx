@@ -30,9 +30,10 @@ export default function ActionDrawer() {
   });
 
   const userProfile = data?.profiles?.find((p: any) => p.id === user?.id);
-  const executions = (userProfile?.executions || [])
-    .filter((e: any) => e.task?.id) // Filter out executions without task data
-    as Execution[];
+
+  // Filter executions to only include those with valid task data
+  const allExecutions = (userProfile?.executions || []) as any[];
+  const executions = allExecutions.filter((e) => e.task?.id) as Execution[];
 
   // Separate active and completed
   const activeExecutions = executions.filter((e) => !e.completed && e.task);
