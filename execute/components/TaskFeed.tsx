@@ -1,6 +1,7 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import db from '@/lib/db';
 import { id } from '@instantdb/react';
 
@@ -29,6 +30,25 @@ export default function TaskFeed() {
   });
   const [imagePreview, setImagePreview] = useState<string>('');
   const [isUploading, setIsUploading] = useState(false);
+  const [isDragging, setIsDragging] = useState(false);
+  const [isPublishing, setIsPublishing] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Extract link metadata
+  const [linkPreview, setLinkPreview] = useState<{ domain: string; url: string } | null>(null);
+
+  useEffect(() => {
+    if (newTask.externalLink && newTask.externalLink.startsWith('http')) {
+      try {
+        const url = new URL(newTask.externalLink);
+        setLinkPreview({ domain: url.hostname, url: newTask.externalLink });
+      } catch {
+        setLinkPreview(null);
+      }
+    } else {
+      setLinkPreview(null);
+    }
+  }, [newTask.externalLink]);
 
   // Update preview when URL is entered
   useEffect(() => {
@@ -69,8 +89,7 @@ export default function TaskFeed() {
     );
   };
 
-  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
+  const handleImageUpload = async (file: File) => {
     if (!file) return;
 
     // Validate file type
@@ -79,7 +98,7 @@ export default function TaskFeed() {
       return;
     }
 
-    // Validate file size (max 2MB to keep base64 reasonable)
+    // Validate file size (max 2MB)
     if (file.size > 2 * 1024 * 1024) {
       alert('Image size must be less than 2MB');
       return;
@@ -106,9 +125,32 @@ export default function TaskFeed() {
     }
   };
 
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragging(true);
+  };
+
+  const handleDragLeave = (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragging(false);
+  };
+
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragging(false);
+
+    const file = e.dataTransfer.files[0];
+    if (file) {
+      handleImageUpload(file);
+    }
+  };
+
   const clearImage = () => {
     setImagePreview('');
     setNewTask({ ...newTask, imageUrl: '' });
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
   };
 
   const handleCreateTask = async (e: React.FormEvent) => {
@@ -119,9 +161,13 @@ export default function TaskFeed() {
       return;
     }
 
+    setIsPublishing(true);
     const taskId = id();
 
     try {
+      // Animate delay for effect
+      await new Promise(resolve => setTimeout(resolve, 800));
+
       // Create the task
       await db.transact([
         db.tx.tasks[taskId].update({
@@ -139,9 +185,12 @@ export default function TaskFeed() {
       // Reset form
       setNewTask({ title: '', description: '', imageUrl: '', externalLink: '' });
       setImagePreview('');
+      setLinkPreview(null);
+      setIsPublishing(false);
       setShowCreateForm(false);
     } catch (err: any) {
       alert('Error creating task: ' + err.message);
+      setIsPublishing(false);
     }
   };
 
@@ -166,173 +215,361 @@ export default function TaskFeed() {
     }
   };
 
+  // Live Preview Component
+  const LivePreview = () => {
+    if (!newTask.title && !newTask.description && !imagePreview && !linkPreview) {
+      return null;
+    }
+
+    return (
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="bg-white rounded-2xl shadow-lg overflow-hidden"
+      >
+        {imagePreview && (
+          <img
+            src={imagePreview}
+            alt="Preview"
+            className="w-full h-48 object-cover"
+          />
+        )}
+        <div className="p-6">
+          <h3 className="text-2xl font-bold text-gray-900 mb-2">
+            {newTask.title || 'Your Task Title'}
+          </h3>
+          <p className="text-gray-600 mb-4">
+            {newTask.description || 'Your task description will appear here...'}
+          </p>
+
+          {linkPreview && (
+            <a
+              href={linkPreview.url}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center gap-2 text-blue-600 hover:underline text-sm mb-4"
+            >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+              </svg>
+              {linkPreview.domain}
+            </a>
+          )}
+
+          <div className="flex items-center justify-between">
+            <div className="text-sm text-gray-500">0 executions</div>
+            <div className="px-6 py-2 bg-gradient-to-r from-purple-600 to-blue-600 text-white rounded-xl font-semibold">
+              Execute
+            </div>
+          </div>
+        </div>
+      </motion.div>
+    );
+  };
+
   return (
     <div className="space-y-4">
       {/* Create Task Button */}
       <div className="flex justify-between items-center">
         <h2 className="text-2xl font-bold text-gray-900">Discover Actions</h2>
-        <button
+        <motion.button
+          whileHover={{ scale: 1.05 }}
+          whileTap={{ scale: 0.95 }}
           onClick={() => setShowCreateForm(!showCreateForm)}
           className="px-6 py-2 bg-gradient-to-r from-purple-600 to-blue-600 text-white rounded-xl font-semibold hover:shadow-lg transition-all"
         >
           {showCreateForm ? 'Cancel' : '+ Create Task'}
-        </button>
+        </motion.button>
       </div>
 
-      {/* Create Task Form */}
-      {showCreateForm && (
-        <form
-          onSubmit={handleCreateTask}
-          className="bg-white rounded-2xl shadow-lg p-6 space-y-4"
-        >
-          <input
-            type="text"
-            placeholder="Task title"
-            value={newTask.title}
-            onChange={(e) => setNewTask({ ...newTask, title: e.target.value })}
-            className="w-full px-4 py-3 rounded-xl border-2 border-gray-200 focus:border-purple-500 focus:outline-none text-lg font-semibold"
-            required
-          />
-          <textarea
-            placeholder="Task description"
-            value={newTask.description}
-            onChange={(e) =>
-              setNewTask({ ...newTask, description: e.target.value })
-            }
-            className="w-full px-4 py-3 rounded-xl border-2 border-gray-200 focus:border-purple-500 focus:outline-none resize-none"
-            rows={3}
-            required
-          />
-
-          {/* Image Upload Section */}
-          <div className="space-y-2">
-            <label className="block text-sm font-medium text-gray-700">
-              Image (optional)
-            </label>
-
-            {imagePreview ? (
-              <div className="relative">
-                <img
-                  src={imagePreview}
-                  alt="Preview"
-                  className="w-full h-48 object-cover rounded-xl"
-                />
-                <button
-                  type="button"
-                  onClick={clearImage}
-                  className="absolute top-2 right-2 bg-red-500 text-white px-3 py-1 rounded-lg text-sm hover:bg-red-600 transition-colors"
-                >
-                  Remove
-                </button>
-              </div>
-            ) : (
-              <div className="space-y-2">
-                <input
-                  type="file"
-                  accept="image/*"
-                  onChange={handleImageUpload}
-                  disabled={isUploading}
-                  className="w-full px-4 py-2 rounded-xl border-2 border-gray-200 focus:border-purple-500 focus:outline-none file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-purple-50 file:text-purple-700 hover:file:bg-purple-100"
-                />
-                <div className="text-center text-sm text-gray-500">
-                  or
-                </div>
-                <input
-                  type="url"
-                  placeholder="Enter image URL"
-                  value={newTask.imageUrl}
-                  onChange={(e) =>
-                    setNewTask({ ...newTask, imageUrl: e.target.value })
-                  }
-                  className="w-full px-4 py-2 rounded-xl border-2 border-gray-200 focus:border-purple-500 focus:outline-none"
-                />
-              </div>
-            )}
-            {isUploading && (
-              <div className="text-sm text-purple-600">Uploading image...</div>
-            )}
-          </div>
-
-          <input
-            type="url"
-            placeholder="External link (optional)"
-            value={newTask.externalLink}
-            onChange={(e) =>
-              setNewTask({ ...newTask, externalLink: e.target.value })
-            }
-            className="w-full px-4 py-2 rounded-xl border-2 border-gray-200 focus:border-purple-500 focus:outline-none"
-          />
-          <button
-            type="submit"
-            className="w-full bg-gradient-to-r from-purple-600 to-blue-600 text-white py-3 rounded-xl font-semibold hover:shadow-lg transition-all"
+      {/* Enhanced Create Task Form */}
+      <AnimatePresence>
+        {showCreateForm && (
+          <motion.div
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: 'auto' }}
+            exit={{ opacity: 0, height: 0, transition: { duration: 0.3 } }}
+            className="overflow-hidden"
           >
-            Create Task
-          </button>
-        </form>
-      )}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              {/* Form Column */}
+              <motion.form
+                onSubmit={handleCreateTask}
+                className="bg-white rounded-2xl shadow-lg p-8 space-y-6"
+              >
+                <h3 className="text-2xl font-bold text-gray-900 mb-6">
+                  Create New Action
+                </h3>
 
-      {/* Task Cards */}
-      <div className="grid gap-4 md:grid-cols-2">
-        {tasks.map((task) => (
-          <div
-            key={task.id}
-            className="bg-white rounded-2xl shadow-lg overflow-hidden hover:shadow-xl transition-shadow"
-          >
-            {task.imageUrl && (
-              <img
-                src={task.imageUrl}
-                alt={task.title}
-                className="w-full h-48 object-cover"
-              />
-            )}
-            <div className="p-6">
-              <h3 className="text-2xl font-bold text-gray-900 mb-2">
-                {task.title}
-              </h3>
-              <p className="text-gray-600 mb-4">{task.description}</p>
-
-              {task.externalLink && (
-                <a
-                  href={task.externalLink}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-blue-600 hover:underline text-sm mb-4 block"
-                >
-                  Learn more →
-                </a>
-              )}
-
-              <div className="flex items-center justify-between">
-                <div className="text-sm text-gray-500">
-                  {task.executions?.length || 0} executions
+                {/* Task Title */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Task Title
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="What needs to be done?"
+                    value={newTask.title}
+                    onChange={(e) => setNewTask({ ...newTask, title: e.target.value })}
+                    className="w-full px-4 py-4 rounded-xl border-2 border-gray-200 focus:border-purple-500 focus:outline-none text-2xl font-bold placeholder:text-gray-300"
+                    required
+                  />
                 </div>
 
-                {!hasExecuted(task) ? (
-                  <button
-                    onClick={() => handleExecute(task.id)}
-                    className="px-6 py-2 bg-gradient-to-r from-purple-600 to-blue-600 text-white rounded-xl font-semibold hover:shadow-lg transition-all hover:scale-105"
-                  >
-                    Execute
-                  </button>
-                ) : hasCompleted(task) ? (
-                  <div className="px-6 py-2 bg-green-100 text-green-700 rounded-xl font-semibold">
-                    ✓ Completed
-                  </div>
-                ) : (
-                  <div className="px-6 py-2 bg-yellow-100 text-yellow-700 rounded-xl font-semibold">
-                    In Progress
-                  </div>
-                )}
+                {/* Description */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Description
+                  </label>
+                  <textarea
+                    placeholder="Short, punchy instructions..."
+                    value={newTask.description}
+                    onChange={(e) =>
+                      setNewTask({ ...newTask, description: e.target.value })
+                    }
+                    className="w-full px-4 py-3 rounded-xl border-2 border-gray-200 focus:border-purple-500 focus:outline-none resize-none text-lg"
+                    rows={4}
+                    required
+                  />
+                </div>
+
+                {/* Drag & Drop Image Upload */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Image (optional)
+                  </label>
+
+                  {imagePreview ? (
+                    <div className="relative">
+                      <img
+                        src={imagePreview}
+                        alt="Preview"
+                        className="w-full h-48 object-cover rounded-xl"
+                      />
+                      <button
+                        type="button"
+                        onClick={clearImage}
+                        className="absolute top-2 right-2 bg-red-500 text-white p-2 rounded-lg hover:bg-red-600 transition-colors"
+                      >
+                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                      </button>
+                    </div>
+                  ) : (
+                    <div
+                      onDragOver={handleDragOver}
+                      onDragLeave={handleDragLeave}
+                      onDrop={handleDrop}
+                      className={`border-2 border-dashed rounded-xl p-8 text-center transition-all cursor-pointer ${
+                        isDragging
+                          ? 'border-purple-500 bg-purple-50'
+                          : 'border-gray-300 hover:border-purple-400 hover:bg-gray-50'
+                      }`}
+                      onClick={() => fileInputRef.current?.click()}
+                    >
+                      {isUploading ? (
+                        <div className="text-purple-600">
+                          <div className="animate-spin mx-auto w-8 h-8 border-4 border-purple-600 border-t-transparent rounded-full mb-2"></div>
+                          Uploading...
+                        </div>
+                      ) : (
+                        <>
+                          <svg
+                            className="mx-auto w-12 h-12 text-gray-400 mb-3"
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={2}
+                              d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"
+                            />
+                          </svg>
+                          <p className="text-gray-600 font-medium mb-1">
+                            Drag & drop your image here
+                          </p>
+                          <p className="text-gray-400 text-sm">
+                            or click to browse (max 2MB)
+                          </p>
+                        </>
+                      )}
+                      <input
+                        ref={fileInputRef}
+                        type="file"
+                        accept="image/*"
+                        onChange={(e) => {
+                          const file = e.target.files?.[0];
+                          if (file) handleImageUpload(file);
+                        }}
+                        className="hidden"
+                      />
+                    </div>
+                  )}
+                </div>
+
+                {/* External Link with Preview */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    External Link (optional)
+                  </label>
+                  <input
+                    type="url"
+                    placeholder="https://example.com"
+                    value={newTask.externalLink}
+                    onChange={(e) =>
+                      setNewTask({ ...newTask, externalLink: e.target.value })
+                    }
+                    className="w-full px-4 py-3 rounded-xl border-2 border-gray-200 focus:border-purple-500 focus:outline-none"
+                  />
+
+                  {linkPreview && (
+                    <motion.div
+                      initial={{ opacity: 0, y: -10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      className="mt-3 p-4 bg-blue-50 border-2 border-blue-200 rounded-xl flex items-center gap-3"
+                    >
+                      <svg
+                        className="w-5 h-5 text-blue-600 flex-shrink-0"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"
+                        />
+                      </svg>
+                      <div className="flex-1 min-w-0">
+                        <div className="text-sm font-semibold text-blue-900">
+                          {linkPreview.domain}
+                        </div>
+                        <div className="text-xs text-blue-600 truncate">
+                          {linkPreview.url}
+                        </div>
+                      </div>
+                    </motion.div>
+                  )}
+                </div>
+
+                {/* Submit Button */}
+                <motion.button
+                  type="submit"
+                  disabled={isPublishing}
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
+                  className="w-full bg-gradient-to-r from-purple-600 to-blue-600 text-white py-4 rounded-xl font-bold text-lg hover:shadow-xl transition-all disabled:opacity-50 disabled:cursor-not-allowed relative overflow-hidden"
+                >
+                  {isPublishing ? (
+                    <motion.div
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      className="flex items-center justify-center gap-2"
+                    >
+                      <div className="animate-spin w-5 h-5 border-3 border-white border-t-transparent rounded-full"></div>
+                      Launching...
+                    </motion.div>
+                  ) : (
+                    '🚀 Launch Task'
+                  )}
+                </motion.button>
+              </motion.form>
+
+              {/* Live Preview Column */}
+              <div className="space-y-4">
+                <h3 className="text-lg font-semibold text-gray-700">
+                  Live Preview
+                </h3>
+                <LivePreview />
               </div>
             </div>
-          </div>
-        ))}
-      </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Task Cards */}
+      <motion.div layout className="grid gap-4 md:grid-cols-2">
+        <AnimatePresence>
+          {tasks.map((task) => (
+            <motion.div
+              key={task.id}
+              layout
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.9 }}
+              whileHover={{ y: -5 }}
+              transition={{ type: 'spring', stiffness: 300, damping: 20 }}
+              className="bg-white rounded-2xl shadow-lg overflow-hidden hover:shadow-xl transition-shadow"
+            >
+              {task.imageUrl && (
+                <img
+                  src={task.imageUrl}
+                  alt={task.title}
+                  className="w-full h-48 object-cover"
+                />
+              )}
+              <div className="p-6">
+                <h3 className="text-2xl font-bold text-gray-900 mb-2">
+                  {task.title}
+                </h3>
+                <p className="text-gray-600 mb-4">{task.description}</p>
+
+                {task.externalLink && (
+                  <a
+                    href={task.externalLink}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center gap-2 text-blue-600 hover:underline text-sm mb-4"
+                  >
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                    </svg>
+                    Learn more →
+                  </a>
+                )}
+
+                <div className="flex items-center justify-between">
+                  <div className="text-sm text-gray-500">
+                    {task.executions?.length || 0} executions
+                  </div>
+
+                  {!hasExecuted(task) ? (
+                    <motion.button
+                      whileHover={{ scale: 1.05 }}
+                      whileTap={{ scale: 0.95 }}
+                      onClick={() => handleExecute(task.id)}
+                      className="px-6 py-2 bg-gradient-to-r from-purple-600 to-blue-600 text-white rounded-xl font-semibold hover:shadow-lg transition-all"
+                    >
+                      Execute
+                    </motion.button>
+                  ) : hasCompleted(task) ? (
+                    <div className="px-6 py-2 bg-green-100 text-green-700 rounded-xl font-semibold">
+                      ✓ Completed
+                    </div>
+                  ) : (
+                    <div className="px-6 py-2 bg-yellow-100 text-yellow-700 rounded-xl font-semibold">
+                      In Progress
+                    </div>
+                  )}
+                </div>
+              </div>
+            </motion.div>
+          ))}
+        </AnimatePresence>
+      </motion.div>
 
       {tasks.length === 0 && !showCreateForm && (
-        <div className="text-center py-12 text-gray-500">
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          className="text-center py-12 text-gray-500"
+        >
           No tasks yet. Be the first to create one!
-        </div>
+        </motion.div>
       )}
     </div>
   );
