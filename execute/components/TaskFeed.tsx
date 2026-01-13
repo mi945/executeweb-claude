@@ -4,6 +4,7 @@ import { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import db from '@/lib/db';
 import { id } from '@instantdb/react';
+import TaskComments from './TaskComments';
 
 interface Task {
   id: string;
