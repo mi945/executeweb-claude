@@ -35,38 +35,60 @@ export default function Home() {
                   Execute
                 </h1>
 
-                <nav className="flex gap-2">
+                <div className="flex items-center gap-3">
+                  <nav className="flex gap-2">
+                    <button
+                      onClick={() => setActiveTab('discover')}
+                      className={`px-4 py-2 rounded-xl font-semibold transition-all ${
+                        activeTab === 'discover'
+                          ? 'bg-gradient-to-r from-purple-600 to-blue-600 text-white shadow-lg'
+                          : 'text-gray-600 hover:bg-gray-100'
+                      }`}
+                    >
+                      Discover
+                    </button>
+                    <button
+                      onClick={() => setActiveTab('actions')}
+                      className={`px-4 py-2 rounded-xl font-semibold transition-all ${
+                        activeTab === 'actions'
+                          ? 'bg-gradient-to-r from-purple-600 to-blue-600 text-white shadow-lg'
+                          : 'text-gray-600 hover:bg-gray-100'
+                      }`}
+                    >
+                      My Actions
+                    </button>
+                    <button
+                      onClick={() => setActiveTab('pulse')}
+                      className={`px-4 py-2 rounded-xl font-semibold transition-all ${
+                        activeTab === 'pulse'
+                          ? 'bg-gradient-to-r from-purple-600 to-blue-600 text-white shadow-lg'
+                          : 'text-gray-600 hover:bg-gray-100'
+                      }`}
+                    >
+                      Pulse
+                    </button>
+                  </nav>
+
                   <button
-                    onClick={() => setActiveTab('discover')}
-                    className={`px-4 py-2 rounded-xl font-semibold transition-all ${
-                      activeTab === 'discover'
-                        ? 'bg-gradient-to-r from-purple-600 to-blue-600 text-white shadow-lg'
-                        : 'text-gray-600 hover:bg-gray-100'
-                    }`}
+                    onClick={() => router.push('/profile')}
+                    className="flex items-center gap-2 px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-xl font-semibold transition-all"
                   >
-                    Discover
+                    <svg
+                      className="w-5 h-5"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
+                      />
+                    </svg>
+                    Profile
                   </button>
-                  <button
-                    onClick={() => setActiveTab('actions')}
-                    className={`px-4 py-2 rounded-xl font-semibold transition-all ${
-                      activeTab === 'actions'
-                        ? 'bg-gradient-to-r from-purple-600 to-blue-600 text-white shadow-lg'
-                        : 'text-gray-600 hover:bg-gray-100'
-                    }`}
-                  >
-                    My Actions
-                  </button>
-                  <button
-                    onClick={() => setActiveTab('pulse')}
-                    className={`px-4 py-2 rounded-xl font-semibold transition-all ${
-                      activeTab === 'pulse'
-                        ? 'bg-gradient-to-r from-purple-600 to-blue-600 text-white shadow-lg'
-                        : 'text-gray-600 hover:bg-gray-100'
-                    }`}
-                  >
-                    Pulse
-                  </button>
-                </nav>
+                </div>
               </div>
             </div>
           </header>
