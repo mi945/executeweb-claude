@@ -50,13 +50,13 @@ export default function TaskFeed() {
 
   // Check if user has executed a task
   const hasExecuted = (task: Task) => {
-    return task.executions?.some((e) => e.user.id === user?.id);
+    return task.executions?.some((e) => e.user?.id === user?.id);
   };
 
   // Check if user has completed a task
   const hasCompleted = (task: Task) => {
     return task.executions?.some(
-      (e) => e.user.id === user?.id && e.completed
+      (e) => e.user?.id === user?.id && e.completed
     );
   };
 
