@@ -27,6 +27,8 @@ export default function TaskFeed() {
     imageUrl: '',
     externalLink: '',
   });
+  const [imagePreview, setImagePreview] = useState<string>('');
+  const [isUploading, setIsUploading] = useState(false);
 
   // Query all tasks with their executions
   const { data } = db.useQuery({
@@ -60,6 +62,48 @@ export default function TaskFeed() {
     );
   };
 
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    // Validate file type
+    if (!file.type.startsWith('image/')) {
+      alert('Please select an image file');
+      return;
+    }
+
+    // Validate file size (max 2MB to keep base64 reasonable)
+    if (file.size > 2 * 1024 * 1024) {
+      alert('Image size must be less than 2MB');
+      return;
+    }
+
+    setIsUploading(true);
+
+    try {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        const base64String = reader.result as string;
+        setImagePreview(base64String);
+        setNewTask({ ...newTask, imageUrl: base64String });
+        setIsUploading(false);
+      };
+      reader.onerror = () => {
+        alert('Error reading file');
+        setIsUploading(false);
+      };
+      reader.readAsDataURL(file);
+    } catch (err) {
+      alert('Error uploading image');
+      setIsUploading(false);
+    }
+  };
+
+  const clearImage = () => {
+    setImagePreview('');
+    setNewTask({ ...newTask, imageUrl: '' });
+  };
+
   const handleCreateTask = async (e: React.FormEvent) => {
     e.preventDefault();
 
@@ -87,6 +131,7 @@ export default function TaskFeed() {
 
       // Reset form
       setNewTask({ title: '', description: '', imageUrl: '', externalLink: '' });
+      setImagePreview('');
       setShowCreateForm(false);
     } catch (err: any) {
       alert('Error creating task: ' + err.message);
