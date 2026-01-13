@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import db from '@/lib/db';
 
 interface Notification {
@@ -13,7 +13,7 @@ interface Notification {
 export default function NudgeNotifications() {
   const { user } = db.useAuth();
   const [notifications, setNotifications] = useState<Notification[]>([]);
-  const [lastCheckTime, setLastCheckTime] = useState(Date.now());
+  const lastCheckTimeRef = useRef(Date.now());
 
   // Query all executions to watch for new completions
   const { data } = db.useQuery({
@@ -52,7 +52,7 @@ export default function NudgeNotifications() {
         if (!e.completed || !e.completedAt) return false;
 
         // Must be after last check time
-        if (e.completedAt <= lastCheckTime) return false;
+        if (e.completedAt <= lastCheckTimeRef.current) return false;
 
         // Must be by someone else
         if (e.user?.id === user?.id) return false;
@@ -73,8 +73,8 @@ export default function NudgeNotifications() {
       setNotifications((prev) => [...newCompletions, ...prev].slice(0, 5));
     }
 
-    setLastCheckTime(Date.now());
-  }, [data, user?.id, userTaskIds, lastCheckTime]);
+    lastCheckTimeRef.current = Date.now();
+  }, [data, user?.id, userTaskIds]);
 
   const dismissNotification = (id: string) => {
     setNotifications((prev) => prev.filter((n) => n.id !== id));
