@@ -68,7 +68,7 @@ export default function TaskFeed() {
     },
   });
 
-  const tasks = (data?.tasks || []) as Task[];
+  const tasks = ((data?.tasks || []) as Task[]).sort((a, b) => b.createdAt - a.createdAt);
 
   // Get current user's profile
   const { data: profileData } = db.useQuery({
