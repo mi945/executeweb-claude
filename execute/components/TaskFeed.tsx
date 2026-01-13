@@ -508,74 +508,141 @@ export default function TaskFeed() {
       {/* Task Cards */}
       <motion.div layout className="grid gap-4 md:grid-cols-2">
         <AnimatePresence>
-          {tasks.map((task) => (
-            <motion.div
-              key={task.id}
-              layout
-              initial={{ opacity: 0, scale: 0.9 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.9 }}
-              whileHover={{ y: -5 }}
-              transition={{ type: 'spring', stiffness: 300, damping: 20 }}
-              className="bg-white rounded-2xl shadow-lg overflow-hidden hover:shadow-xl transition-shadow"
-            >
-              {task.imageUrl && (
-                <img
-                  src={task.imageUrl}
-                  alt={task.title}
-                  className="w-full h-48 object-cover"
-                />
-              )}
-              <div className="p-6">
-                <h3 className="text-2xl font-bold text-gray-900 mb-2">
-                  {task.title}
-                </h3>
-                <p className="text-gray-600 mb-4">{task.description}</p>
+          {tasks.map((task) => {
+            const isExpanded = expandedCards.has(task.id);
+            const descriptionLength = task.description.length;
+            const needsExpansion = descriptionLength > 120; // Approximate character threshold
 
-                {task.externalLink && (
-                  <a
-                    href={task.externalLink}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="flex items-center gap-2 text-blue-600 hover:underline text-sm mb-4"
-                  >
-                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
-                    </svg>
-                    Learn more →
-                  </a>
+            return (
+              <motion.div
+                key={task.id}
+                layout
+                initial={{ opacity: 0, scale: 0.9 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 0.9 }}
+                whileHover={{ y: -5 }}
+                transition={{ type: 'spring', stiffness: 300, damping: 20 }}
+                className="bg-white rounded-2xl shadow-md border border-gray-100 overflow-hidden hover:shadow-lg transition-all"
+              >
+                {/* Image with 16:9 aspect ratio */}
+                {task.imageUrl && (
+                  <div className="w-full relative" style={{ paddingBottom: '56.25%' }}>
+                    <img
+                      src={task.imageUrl}
+                      alt={task.title}
+                      className="absolute top-0 left-0 w-full h-full object-cover"
+                    />
+                  </div>
                 )}
 
-                <div className="flex items-center justify-between mb-4">
-                  <div className="text-sm text-gray-500">
-                    {task.executions?.length || 0} executions
+                {/* Card Content */}
+                <div className="p-6 flex flex-col">
+                  {/* Title */}
+                  <h3 className="text-2xl font-bold text-gray-900 mb-3">
+                    {task.title}
+                  </h3>
+
+                  {/* Expandable Description */}
+                  <div className="mb-3">
+                    <motion.div
+                      animate={{ height: isExpanded ? 'auto' : needsExpansion ? '140px' : 'auto' }}
+                      transition={{ duration: 0.3, ease: 'easeInOut' }}
+                      className="relative overflow-hidden"
+                    >
+                      <p className="text-gray-600 leading-relaxed">
+                        {task.description}
+                      </p>
+
+                      {/* Gradient fade overlay - only show when collapsed and needs expansion */}
+                      {!isExpanded && needsExpansion && (
+                        <div
+                          className="absolute bottom-0 left-0 right-0 h-16 pointer-events-none"
+                          style={{
+                            background: 'linear-gradient(to bottom, transparent, white)',
+                          }}
+                        />
+                      )}
+                    </motion.div>
+
+                    {/* See More / See Less Button */}
+                    {needsExpansion && (
+                      <motion.button
+                        onClick={() => toggleCardExpansion(task.id)}
+                        whileHover={{ scale: 1.02 }}
+                        whileTap={{ scale: 0.98 }}
+                        className="mt-2 text-sm font-semibold text-purple-600 hover:text-purple-700 transition-colors flex items-center gap-1"
+                      >
+                        {isExpanded ? (
+                          <>
+                            See Less
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" />
+                            </svg>
+                          </>
+                        ) : (
+                          <>
+                            See More
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                            </svg>
+                          </>
+                        )}
+                      </motion.button>
+                    )}
                   </div>
 
-                  {!hasExecuted(task) ? (
-                    <motion.button
-                      whileHover={{ scale: 1.05 }}
-                      whileTap={{ scale: 0.95 }}
-                      onClick={() => handleExecute(task.id)}
-                      className="px-6 py-2 bg-gradient-to-r from-purple-600 to-blue-600 text-white rounded-xl font-semibold hover:shadow-lg transition-all"
+                  {/* External Link */}
+                  {task.externalLink && (
+                    <a
+                      href={task.externalLink}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex items-center gap-2 text-blue-600 hover:underline text-sm mb-4"
                     >
-                      Execute
-                    </motion.button>
-                  ) : hasCompleted(task) ? (
-                    <div className="px-6 py-2 bg-green-100 text-green-700 rounded-xl font-semibold">
-                      ✓ Completed
-                    </div>
-                  ) : (
-                    <div className="px-6 py-2 bg-yellow-100 text-yellow-700 rounded-xl font-semibold">
-                      In Progress
-                    </div>
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                      </svg>
+                      Learn more →
+                    </a>
                   )}
-                </div>
 
-                {/* Comments Section */}
-                <TaskComments taskId={task.id} />
-              </div>
-            </motion.div>
-          ))}
+                  {/* Spacer to push button to bottom */}
+                  <div className="flex-grow" />
+
+                  {/* Execution Stats and Button - Pinned to Bottom */}
+                  <div className="flex items-center justify-between pt-4 border-t border-gray-100">
+                    <div className="text-sm text-gray-500">
+                      {task.executions?.length || 0} executions
+                    </div>
+
+                    {!hasExecuted(task) ? (
+                      <motion.button
+                        whileHover={{ scale: 1.05 }}
+                        whileTap={{ scale: 0.95 }}
+                        onClick={() => handleExecute(task.id)}
+                        className="px-6 py-2 bg-gradient-to-r from-purple-600 to-blue-600 text-white rounded-xl font-semibold hover:shadow-lg transition-all"
+                      >
+                        Execute
+                      </motion.button>
+                    ) : hasCompleted(task) ? (
+                      <div className="px-6 py-2 bg-green-100 text-green-700 rounded-xl font-semibold">
+                        ✓ Completed
+                      </div>
+                    ) : (
+                      <div className="px-6 py-2 bg-yellow-100 text-yellow-700 rounded-xl font-semibold">
+                        In Progress
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Comments Section */}
+                  <div className="pt-4">
+                    <TaskComments taskId={task.id} />
+                  </div>
+                </div>
+              </motion.div>
+            );
+          })}
         </AnimatePresence>
       </motion.div>
 
