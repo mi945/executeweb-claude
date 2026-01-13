@@ -533,7 +533,7 @@ export default function TaskFeed() {
                   </a>
                 )}
 
-                <div className="flex items-center justify-between">
+                <div className="flex items-center justify-between mb-4">
                   <div className="text-sm text-gray-500">
                     {task.executions?.length || 0} executions
                   </div>
@@ -557,6 +557,9 @@ export default function TaskFeed() {
                     </div>
                   )}
                 </div>
+
+                {/* Comments Section */}
+                <TaskComments taskId={task.id} />
               </div>
             </motion.div>
           ))}
