@@ -33,6 +33,7 @@ export default function TaskFeed() {
   const [isUploading, setIsUploading] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
   const [isPublishing, setIsPublishing] = useState(false);
+  const [expandedCards, setExpandedCards] = useState<Set<string>>(new Set());
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Extract link metadata
@@ -214,6 +215,18 @@ export default function TaskFeed() {
     } catch (err: any) {
       alert('Error executing task: ' + err.message);
     }
+  };
+
+  const toggleCardExpansion = (taskId: string) => {
+    setExpandedCards((prev) => {
+      const newSet = new Set(prev);
+      if (newSet.has(taskId)) {
+        newSet.delete(taskId);
+      } else {
+        newSet.add(taskId);
+      }
+      return newSet;
+    });
   };
 
   // Live Preview Component
