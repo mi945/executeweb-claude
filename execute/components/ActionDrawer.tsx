@@ -30,12 +30,14 @@ export default function ActionDrawer() {
   });
 
   const userProfile = data?.profiles?.find((p: any) => p.id === user?.id);
-  const executions = (userProfile?.executions || []) as Execution[];
+  const executions = (userProfile?.executions || [])
+    .filter((e: any) => e.task?.id) // Filter out executions without task data
+    as Execution[];
 
   // Separate active and completed
-  const activeExecutions = executions.filter((e) => !e.completed);
+  const activeExecutions = executions.filter((e) => !e.completed && e.task);
   const completedExecutions = executions
-    .filter((e) => e.completed)
+    .filter((e) => e.completed && e.task)
     .sort((a, b) => (b.completedAt || 0) - (a.completedAt || 0));
 
   const handleComplete = async (execution: Execution) => {
@@ -118,10 +120,10 @@ export default function ActionDrawer() {
                 <div className="flex items-start justify-between">
                   <div className="flex-1">
                     <h3 className="text-xl font-bold text-gray-900 mb-1">
-                      {execution.task.title}
+                      {execution.task?.title || 'Untitled Task'}
                     </h3>
                     <p className="text-gray-600 text-sm">
-                      {execution.task.description}
+                      {execution.task?.description || 'No description'}
                     </p>
                   </div>
 
@@ -160,10 +162,10 @@ export default function ActionDrawer() {
                 <div className="flex items-start justify-between">
                   <div className="flex-1">
                     <h3 className="text-xl font-bold text-gray-900 line-through mb-1">
-                      {execution.task.title}
+                      {execution.task?.title || 'Untitled Task'}
                     </h3>
                     <p className="text-gray-600 text-sm line-through">
-                      {execution.task.description}
+                      {execution.task?.description || 'No description'}
                     </p>
                     <p className="text-xs text-gray-400 mt-2">
                       Completed {new Date(execution.completedAt || 0).toLocaleDateString()}
