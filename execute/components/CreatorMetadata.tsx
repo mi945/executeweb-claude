@@ -20,6 +20,13 @@ export default function CreatorMetadata({ creator, createdAt }: CreatorMetadataP
 
   return (
     <div className="flex items-center gap-3 mb-3">
+      {/* Timestamp */}
+      <span className="text-gray-400 text-sm flex-shrink-0">
+        {relativeTime}
+      </span>
+
+      <span className="text-gray-400 text-sm">·</span>
+
       {/* Avatar */}
       <div className="flex-shrink-0">
         {creator.profileImage ? (
@@ -35,19 +42,13 @@ export default function CreatorMetadata({ creator, createdAt }: CreatorMetadataP
         )}
       </div>
 
-      {/* Username and Timestamp */}
-      <div className="flex items-center gap-2 min-w-0">
-        <a
-          href={`/profile/${creator.id}`}
-          className="font-semibold text-white hover:text-white/80 transition-colors truncate"
-        >
-          {creator.name}
-        </a>
-        <span className="text-gray-400 text-sm">·</span>
-        <span className="text-gray-400 text-sm flex-shrink-0">
-          {relativeTime}
-        </span>
-      </div>
+      {/* Username */}
+      <a
+        href={`/profile/${creator.id}`}
+        className="font-semibold text-white hover:text-white/80 transition-colors truncate min-w-0"
+      >
+        {creator.name}
+      </a>
     </div>
   );
 }
