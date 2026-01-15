@@ -5,6 +5,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import db from '@/lib/db';
 import { id } from '@instantdb/react';
 import TaskComments from './TaskComments';
+import CreatorMetadata from './CreatorMetadata';
 
 interface Task {
   id: string;
@@ -13,6 +14,11 @@ interface Task {
   imageUrl?: string;
   externalLink?: string;
   createdAt: number;
+  creator?: {
+    id: string;
+    name: string;
+    profileImage?: string;
+  };
   executions?: Array<{
     id: string;
     user: { id: string };
@@ -59,9 +65,10 @@ export default function TaskFeed() {
     }
   }, [newTask.imageUrl]);
 
-  // Query all tasks with their executions
+  // Query all tasks with their executions and creator
   const { data } = db.useQuery({
     tasks: {
+      creator: {},
       executions: {
         user: {},
       },
@@ -537,6 +544,12 @@ export default function TaskFeed() {
 
                 {/* Card Content */}
                 <div className="p-6 flex flex-col">
+                  {/* Creator Metadata */}
+                  <CreatorMetadata
+                    creator={task.creator}
+                    createdAt={task.createdAt}
+                  />
+
                   {/* Title */}
                   <h3 className="text-2xl font-bold text-gray-900 mb-3">
                     {task.title}
