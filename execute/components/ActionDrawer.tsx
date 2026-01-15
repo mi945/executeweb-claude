@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import db from '@/lib/db';
+import CreatorMetadata from './CreatorMetadata';
 
 interface Execution {
   id: string;
@@ -13,6 +14,12 @@ interface Execution {
     title: string;
     description: string;
     imageUrl?: string;
+    createdAt: number;
+    creator?: {
+      id: string;
+      name: string;
+      profileImage?: string;
+    };
   };
 }
 
@@ -20,11 +27,13 @@ export default function ActionDrawer() {
   const { user } = db.useAuth();
   const [celebrateId, setCelebrateId] = useState<string | null>(null);
 
-  // Get user's profile with their executions
+  // Get user's profile with their executions and task creators
   const { data } = db.useQuery({
     profiles: {
       executions: {
-        task: {},
+        task: {
+          creator: {},
+        },
       },
     },
   });
