@@ -129,6 +129,12 @@ export default function ActionDrawer() {
               >
                 <div className="flex items-start justify-between">
                   <div className="flex-1">
+                    {/* Creator Metadata */}
+                    <CreatorMetadata
+                      creator={execution.task?.creator}
+                      createdAt={execution.task?.createdAt || 0}
+                    />
+
                     <h3 className="text-xl font-bold text-gray-900 mb-1">
                       {execution.task?.title || 'Untitled Task'}
                     </h3>
@@ -171,6 +177,12 @@ export default function ActionDrawer() {
               >
                 <div className="flex items-start justify-between">
                   <div className="flex-1">
+                    {/* Creator Metadata */}
+                    <CreatorMetadata
+                      creator={execution.task?.creator}
+                      createdAt={execution.task?.createdAt || 0}
+                    />
+
                     <h3 className="text-xl font-bold text-gray-900 line-through mb-1">
                       {execution.task?.title || 'Untitled Task'}
                     </h3>
