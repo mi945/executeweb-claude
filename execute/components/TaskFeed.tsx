@@ -206,6 +206,7 @@ export default function TaskFeed() {
 
   const handleExecute = async (taskId: string) => {
     const executionId = id();
+    setExecutingTaskId(taskId);
 
     try {
       await db.transact([
@@ -222,6 +223,8 @@ export default function TaskFeed() {
       ].filter(Boolean));
     } catch (err: any) {
       alert('Error executing task: ' + err.message);
+    } finally {
+      setExecutingTaskId(null);
     }
   };
 
