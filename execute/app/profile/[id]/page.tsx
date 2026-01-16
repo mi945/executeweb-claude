@@ -1,9 +1,11 @@
 'use client';
 
+import { use } from 'react';
 import { useRouter } from 'next/navigation';
 import db from '@/lib/db';
 
-export default function UserProfilePage({ params }: { params: { id: string } }) {
+export default function UserProfilePage({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = use(params);
   const router = useRouter();
   const { user } = db.useAuth();
 
@@ -15,8 +17,8 @@ export default function UserProfilePage({ params }: { params: { id: string } }) 
     },
   });
 
-  const viewedProfile = data?.profiles?.find((p: any) => p.id === params.id);
-  const isOwnProfile = user?.id === params.id;
+  const viewedProfile = data?.profiles?.find((p: any) => p.id === id);
+  const isOwnProfile = user?.id === id;
 
   // Count completed executions
   const completedCount =
