@@ -4,9 +4,7 @@ import { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import db from '@/lib/db';
 import { id } from '@instantdb/react';
-import TaskComments from './TaskComments';
-import CreatorMetadata from './CreatorMetadata';
-import LinkPreview from './LinkPreview';
+import ActionCard from './ActionCard';
 
 interface Task {
   id: string;
@@ -22,8 +20,9 @@ interface Task {
   };
   executions?: Array<{
     id: string;
-    user: { id: string };
+    user: { id: string; name?: string; profileImage?: string };
     completed: boolean;
+    completedAt?: number;
   }>;
 }
 
@@ -41,6 +40,7 @@ export default function TaskFeed() {
   const [isDragging, setIsDragging] = useState(false);
   const [isPublishing, setIsPublishing] = useState(false);
   const [expandedCards, setExpandedCards] = useState<Set<string>>(new Set());
+  const [executingTaskId, setExecutingTaskId] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Extract link metadata
