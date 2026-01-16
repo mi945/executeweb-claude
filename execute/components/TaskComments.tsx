@@ -22,9 +22,10 @@ interface Comment {
 
 interface TaskCommentsProps {
   taskId: string;
+  compact?: boolean;
 }
 
-export default function TaskComments({ taskId }: TaskCommentsProps) {
+export default function TaskComments({ taskId, compact = false }: TaskCommentsProps) {
   const { user } = db.useAuth();
   const [commentText, setCommentText] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -249,7 +250,7 @@ export default function TaskComments({ taskId }: TaskCommentsProps) {
   }
 
   return (
-    <div className="border-t border-gray-100 pt-3">
+    <div className={compact ? '' : 'border-t border-gray-100 pt-3'}>
       {/* Teaser View: Show comment count or expand link */}
       {totalComments > 0 && (
         <>
