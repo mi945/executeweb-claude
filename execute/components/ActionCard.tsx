@@ -6,6 +6,7 @@ import { getRelativeTime } from '@/lib/time';
 import { useTaskPresence } from '@/hooks/useTaskPresence';
 import TaskComments from './TaskComments';
 import Link from 'next/link';
+import db from '@/lib/db';
 
 interface Task {
   id: string;
@@ -48,6 +49,18 @@ export default function ActionCard({
 }: ActionCardProps) {
   const [expanded, setExpanded] = useState(false);
   const [showComments, setShowComments] = useState(false);
+
+  // Query comments for this task
+  const { data: commentsData } = db.useQuery({
+    comments: {
+      task: {},
+    },
+  });
+
+  // Count comments for this task
+  const commentCount = (commentsData?.comments || []).filter(
+    (c: any) => c.task?.id === task.id
+  ).length;
 
   // Check execution status for current user
   const userExecution = task.executions?.find((e) => e.user?.id === currentUserId);
@@ -269,7 +282,9 @@ export default function ActionCard({
               d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"
             />
           </svg>
-          <span>{showComments ? 'Hide' : 'Comments'}</span>
+          <span>
+            {showComments ? 'Hide' : commentCount > 0 ? `${commentCount} ${commentCount === 1 ? 'comment' : 'comments'}` : 'Comments'}
+          </span>
         </button>
 
         {showComments && (
