@@ -178,8 +178,8 @@ export default function TaskFeed() {
       // Animate delay for effect
       await new Promise(resolve => setTimeout(resolve, 800));
 
-      // Create the task
-      await db.transact([
+      // Build transactions array
+      const transactions: any[] = [
         db.tx.tasks[taskId].update({
           title: newTask.title.trim(),
           description: newTask.description.trim(),
@@ -187,10 +187,14 @@ export default function TaskFeed() {
           externalLink: newTask.externalLink.trim() || undefined,
           createdAt: Date.now(),
         }),
-        // Link to creator profile
-        userProfile &&
-          db.tx.profiles[userProfile.id].link({ createdTasks: taskId }),
-      ].filter(Boolean));
+      ];
+
+      // Link to creator profile if exists
+      if (userProfile) {
+        transactions.push(db.tx.profiles[userProfile.id].link({ createdTasks: taskId }));
+      }
+
+      await db.transact(transactions);
 
       // Reset form
       setNewTask({ title: '', description: '', imageUrl: '', externalLink: '' });
@@ -209,7 +213,8 @@ export default function TaskFeed() {
     setExecutingTaskId(taskId);
 
     try {
-      await db.transact([
+      // Build transactions array
+      const transactions: any[] = [
         // Create execution
         db.tx.executions[executionId].update({
           executedAt: Date.now(),
@@ -217,10 +222,14 @@ export default function TaskFeed() {
         }),
         // Link to task
         db.tx.tasks[taskId].link({ executions: executionId }),
-        // Link to user profile
-        userProfile &&
-          db.tx.profiles[userProfile.id].link({ executions: executionId }),
-      ].filter(Boolean));
+      ];
+
+      // Link to user profile if exists
+      if (userProfile) {
+        transactions.push(db.tx.profiles[userProfile.id].link({ executions: executionId }));
+      }
+
+      await db.transact(transactions);
     } catch (err: any) {
       alert('Error executing task: ' + err.message);
     } finally {
