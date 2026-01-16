@@ -40,7 +40,7 @@ export default function CreatorMetadata({ creator, createdAt }: CreatorMetadataP
         {/* Username */}
         <a
           href={`/profile/${creator.id}`}
-          className="font-semibold text-white hover:text-white/80 transition-colors truncate"
+          className="font-semibold text-gray-900 hover:text-purple-600 transition-colors truncate"
         >
           {creator.name}
         </a>
