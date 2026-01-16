@@ -622,7 +622,7 @@ export default function TaskFeed() {
                   {/* Execution Stats and Button - Pinned to Bottom */}
                   <div className="flex items-center justify-between pt-4 border-t border-gray-100">
                     <div className="text-sm text-gray-500">
-                      {task.executions?.length || 0} completions
+                      {task.executions?.length || 0} {(task.executions?.length === 1) ? 'completion' : 'completions'}
                     </div>
 
                     {!hasExecuted(task) ? (
