@@ -283,7 +283,7 @@ export default function TaskFeed() {
           )}
 
           <div className="flex items-center justify-between">
-            <div className="text-sm text-gray-500">0 executions</div>
+            <div className="text-sm text-gray-500">0 completions</div>
             <div className="px-6 py-2 bg-gradient-to-r from-purple-600 to-blue-600 text-white rounded-xl font-semibold">
               Execute
             </div>
@@ -622,7 +622,7 @@ export default function TaskFeed() {
                   {/* Execution Stats and Button - Pinned to Bottom */}
                   <div className="flex items-center justify-between pt-4 border-t border-gray-100">
                     <div className="text-sm text-gray-500">
-                      {task.executions?.length || 0} executions
+                      {task.executions?.length || 0} completions
                     </div>
 
                     {!hasExecuted(task) ? (
