@@ -6,6 +6,7 @@ import db from '@/lib/db';
 import { id } from '@instantdb/react';
 import TaskComments from './TaskComments';
 import CreatorMetadata from './CreatorMetadata';
+import LinkPreview from './LinkPreview';
 
 interface Task {
   id: string;
@@ -604,19 +605,11 @@ export default function TaskFeed() {
                     )}
                   </div>
 
-                  {/* External Link */}
+                  {/* External Link - Resource Card */}
                   {task.externalLink && (
-                    <a
-                      href={task.externalLink}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="flex items-center gap-2 text-blue-600 hover:underline text-sm mb-4"
-                    >
-                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
-                      </svg>
-                      Learn more →
-                    </a>
+                    <div className="mb-4">
+                      <LinkPreview url={task.externalLink} />
+                    </div>
                   )}
 
                   {/* Spacer to push button to bottom */}
