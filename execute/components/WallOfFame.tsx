@@ -8,7 +8,7 @@ interface Execution {
   completedAt?: number;
   user?: {
     id: string;
-    name: string;
+    name?: string;
     profileImage?: string;
   };
 }

@@ -527,7 +527,7 @@ export default function TaskFeed() {
             <ActionCard
               key={task.id}
               task={task}
-              userProfile={userProfile}
+              userProfile={userProfile || null}
               currentUserId={user?.id}
               onExecute={handleExecute}
               isExecuting={executingTaskId === task.id}
