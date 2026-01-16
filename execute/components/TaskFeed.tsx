@@ -530,7 +530,7 @@ export default function TaskFeed() {
       </AnimatePresence>
 
       {/* Task Cards - Single Column Layout */}
-      <motion.div layout className="flex flex-col gap-12 max-w-2xl mx-auto">
+      <motion.div layout className="flex flex-col gap-4 max-w-xl mx-auto">
         <AnimatePresence>
           {tasks.map((task) => (
             <ActionCard
