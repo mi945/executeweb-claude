@@ -15,6 +15,7 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: "Execute - Stop scrolling. Start doing.",
   description: "A social app to turn ideas into action.",
+  metadataBase: new URL('https://executeweb-claude.vercel.app'),
 };
 
 export default function RootLayout({
