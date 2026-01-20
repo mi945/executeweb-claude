@@ -237,7 +237,7 @@ export default function ProfilePage() {
                 <div className="flex justify-between items-center py-3 border-b border-gray-200">
                   <span className="text-gray-600">Member Since</span>
                   <span className="font-semibold text-gray-900">
-                    {new Date(user?.created_at || Date.now()).toLocaleDateString()}
+                    {new Date().toLocaleDateString()}
                   </span>
                 </div>
 
