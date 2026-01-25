@@ -38,6 +38,7 @@ interface ActionCardProps {
   currentUserId?: string;
   onExecute: (taskId: string) => void;
   isExecuting: boolean;
+  onClick?: (task: Task) => void;
 }
 
 export default function ActionCard({
@@ -46,6 +47,7 @@ export default function ActionCard({
   currentUserId,
   onExecute,
   isExecuting,
+  onClick,
 }: ActionCardProps) {
   const [expanded, setExpanded] = useState(false);
   const [showComments, setShowComments] = useState(false);
