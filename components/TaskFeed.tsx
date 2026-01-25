@@ -557,6 +557,7 @@ export default function TaskFeed() {
               currentUserId={user?.id}
               onExecute={handleExecute}
               isExecuting={executingTaskId === task.id}
+              onClick={handleCardClick}
             />
           ))}
         </AnimatePresence>

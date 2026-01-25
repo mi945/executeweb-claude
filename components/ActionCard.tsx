@@ -107,7 +107,19 @@ export default function ActionCard({
       layout
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
-      className="bg-white rounded-lg shadow-sm border border-gray-100 overflow-hidden hover:shadow-md transition-shadow"
+      onClick={(e) => {
+        // Only trigger onClick if the click is on the card itself, not on interactive elements
+        const target = e.target as HTMLElement;
+        if (
+          onClick &&
+          !target.closest('button') &&
+          !target.closest('a') &&
+          !target.closest('input')
+        ) {
+          onClick(task);
+        }
+      }}
+      className="bg-white rounded-lg shadow-sm border border-gray-100 overflow-hidden hover:shadow-md transition-shadow cursor-pointer"
     >
       {/* Compact Image (optional) */}
       {task.imageUrl && (
