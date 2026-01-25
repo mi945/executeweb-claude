@@ -15,6 +15,9 @@ interface Task {
   imageUrl?: string;
   externalLink?: string;
   createdAt: number;
+  eventDate?: string;
+  eventTime?: string;
+  eventLocation?: string;
   creator?: {
     id: string;
     name: string;
@@ -193,6 +196,9 @@ export default function TaskFeed() {
           description: newTask.description.trim(),
           imageUrl: newTask.imageUrl.trim() || undefined,
           externalLink: newTask.externalLink.trim() || undefined,
+          eventDate: newTask.eventDate.trim() || undefined,
+          eventTime: newTask.eventTime.trim() || undefined,
+          eventLocation: newTask.eventLocation.trim() || undefined,
           createdAt: Date.now(),
         }),
       ];
@@ -205,9 +211,10 @@ export default function TaskFeed() {
       await db.transact(transactions);
 
       // Reset form
-      setNewTask({ title: '', description: '', imageUrl: '', externalLink: '' });
+      setNewTask({ title: '', description: '', imageUrl: '', externalLink: '', eventDate: '', eventTime: '', eventLocation: '' });
       setImagePreview('');
       setLinkPreview(null);
+      setShowEventDetails(false);
       setIsPublishing(false);
       setShowCreateForm(false);
     } catch (err: any) {
