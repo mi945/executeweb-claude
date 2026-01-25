@@ -526,6 +526,88 @@ export default function TaskFeed() {
                   )}
                 </div>
 
+                {/* Event Details Toggle */}
+                <div className="border-t border-gray-200 pt-4">
+                  <button
+                    type="button"
+                    onClick={() => setShowEventDetails(!showEventDetails)}
+                    className="flex items-center gap-2 text-sm font-medium text-gray-700 hover:text-purple-600 transition-colors"
+                  >
+                    <svg
+                      className={`w-4 h-4 transition-transform ${showEventDetails ? 'rotate-90' : ''}`}
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                    </svg>
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                    </svg>
+                    <span>Add Event Details</span>
+                  </button>
+
+                  <AnimatePresence>
+                    {showEventDetails && (
+                      <motion.div
+                        initial={{ opacity: 0, height: 0 }}
+                        animate={{ opacity: 1, height: 'auto' }}
+                        exit={{ opacity: 0, height: 0 }}
+                        transition={{ duration: 0.2 }}
+                        className="overflow-hidden"
+                      >
+                        <div className="mt-4 space-y-4">
+                          {/* Date Input */}
+                          <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-2">
+                              Date
+                            </label>
+                            <input
+                              type="date"
+                              value={newTask.eventDate}
+                              onChange={(e) =>
+                                setNewTask({ ...newTask, eventDate: e.target.value })
+                              }
+                              className="w-full px-4 py-3 rounded-xl border-2 border-gray-200 focus:border-purple-500 focus:outline-none"
+                            />
+                          </div>
+
+                          {/* Time Input */}
+                          <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-2">
+                              Time
+                            </label>
+                            <input
+                              type="time"
+                              value={newTask.eventTime}
+                              onChange={(e) =>
+                                setNewTask({ ...newTask, eventTime: e.target.value })
+                              }
+                              className="w-full px-4 py-3 rounded-xl border-2 border-gray-200 focus:border-purple-500 focus:outline-none"
+                            />
+                          </div>
+
+                          {/* Location Input */}
+                          <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-2">
+                              Location
+                            </label>
+                            <input
+                              type="text"
+                              placeholder="e.g., City Hall, Main Street"
+                              value={newTask.eventLocation}
+                              onChange={(e) =>
+                                setNewTask({ ...newTask, eventLocation: e.target.value })
+                              }
+                              className="w-full px-4 py-3 rounded-xl border-2 border-gray-200 focus:border-purple-500 focus:outline-none"
+                            />
+                          </div>
+                        </div>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+                </div>
+
                 {/* Submit Button */}
                 <motion.button
                   type="submit"

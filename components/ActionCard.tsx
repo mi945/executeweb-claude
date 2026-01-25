@@ -15,6 +15,9 @@ interface Task {
   imageUrl?: string;
   externalLink?: string;
   createdAt: number;
+  eventDate?: string;
+  eventTime?: string;
+  eventLocation?: string;
   creator?: {
     id: string;
     name: string;
