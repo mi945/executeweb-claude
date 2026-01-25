@@ -13,6 +13,7 @@ interface Comment {
   author: {
     id: string;
     name?: string;
+    avatarColor?: string;
   };
   replies?: Comment[];
   parentComment?: {
@@ -161,7 +162,7 @@ export default function TaskComments({ taskId, compact = false }: TaskCommentsPr
           {/* Avatar */}
           <div
             className={`${isReply ? 'w-6 h-6' : 'w-8 h-8'} rounded-full bg-gradient-to-br ${
-              isReply ? 'from-gray-300 to-gray-400' : 'from-purple-400 to-blue-500'
+              isReply ? 'from-gray-300 to-gray-400' : (comment.author?.avatarColor || 'from-purple-400 to-blue-500')
             } flex items-center justify-center text-white font-bold flex-shrink-0`}
             style={{ fontSize: isReply ? '0.6rem' : '0.75rem' }}
           >
