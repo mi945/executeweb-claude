@@ -224,6 +224,19 @@ export default function TaskFeed() {
   };
 
   const handleExecute = async (taskId: string) => {
+    // Find the task to check current execution status
+    const task = tasks.find(t => t.id === taskId);
+
+    // Check if user already has an incomplete execution
+    const hasIncompleteExecution = task?.executions?.some(
+      (e) => e.user?.id === user?.id && !e.completed
+    );
+
+    if (hasIncompleteExecution) {
+      alert("You're already on it! 💪");
+      return;
+    }
+
     const executionId = id();
     setExecutingTaskId(taskId);
 
