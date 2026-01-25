@@ -22,6 +22,7 @@ interface Task {
     id: string;
     name: string;
     profileImage?: string;
+    avatarColor?: string;
   };
   executions?: Array<{
     id: string;
