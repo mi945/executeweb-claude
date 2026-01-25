@@ -9,6 +9,19 @@ export default function ProfilePage() {
   const { user } = db.useAuth();
   const [isEditing, setIsEditing] = useState(false);
   const [name, setName] = useState('');
+  const [avatarColor, setAvatarColor] = useState('from-purple-400 to-blue-500');
+
+  // Available avatar colors
+  const avatarColors = [
+    { name: 'Purple-Blue', value: 'from-purple-400 to-blue-500' },
+    { name: 'Pink-Rose', value: 'from-pink-400 to-rose-500' },
+    { name: 'Orange-Red', value: 'from-orange-400 to-red-500' },
+    { name: 'Green-Emerald', value: 'from-green-400 to-emerald-500' },
+    { name: 'Blue-Cyan', value: 'from-blue-400 to-cyan-500' },
+    { name: 'Indigo-Purple', value: 'from-indigo-400 to-purple-500' },
+    { name: 'Yellow-Orange', value: 'from-yellow-400 to-orange-500' },
+    { name: 'Teal-Green', value: 'from-teal-400 to-green-500' },
+  ];
 
   // Get user's profile
   const { data } = db.useQuery({
@@ -45,6 +58,7 @@ export default function ProfilePage() {
         await db.transact([
           db.tx.profiles[userProfile.id].update({
             name: name.trim(),
+            avatarColor: avatarColor,
           }),
         ]);
       } else {
@@ -53,6 +67,7 @@ export default function ProfilePage() {
         await db.transact([
           db.tx.profiles[profileId].update({
             name: name.trim(),
+            avatarColor: avatarColor,
             dailyStreak: 0,
           }),
         ]);

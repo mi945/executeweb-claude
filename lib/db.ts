@@ -26,6 +26,7 @@ const schema = i.schema({
     profiles: i.entity({
       name: i.string(),
       profileImage: i.string().optional(),
+      avatarColor: i.string().optional(),
       dailyStreak: i.number(),
       lastCompletionDate: i.number().optional(),
     }),
