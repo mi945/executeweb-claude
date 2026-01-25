@@ -131,6 +131,13 @@ export default function ProfilePage() {
             </h1>
 
             <form onSubmit={handleUpdateProfile} className="space-y-6">
+              {/* Avatar Preview */}
+              <div className="flex justify-center">
+                <div className={`w-24 h-24 rounded-full bg-gradient-to-br ${avatarColor} flex items-center justify-center text-white text-4xl font-bold shadow-lg`}>
+                  {name.charAt(0).toUpperCase() || '?'}
+                </div>
+              </div>
+
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   Your Name
@@ -144,6 +151,42 @@ export default function ProfilePage() {
                   autoFocus
                   required
                 />
+              </div>
+
+              {/* Color Picker */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-3">
+                  Avatar Color
+                </label>
+                <div className="grid grid-cols-4 gap-3">
+                  {avatarColors.map((color) => (
+                    <button
+                      key={color.value}
+                      type="button"
+                      onClick={() => setAvatarColor(color.value)}
+                      className={`relative h-12 rounded-xl bg-gradient-to-br ${color.value} transition-all ${
+                        avatarColor === color.value
+                          ? 'ring-4 ring-purple-500 ring-offset-2 scale-105'
+                          : 'hover:scale-105'
+                      }`}
+                      title={color.name}
+                    >
+                      {avatarColor === color.value && (
+                        <svg
+                          className="w-6 h-6 text-white absolute inset-0 m-auto drop-shadow-lg"
+                          fill="currentColor"
+                          viewBox="0 0 20 20"
+                        >
+                          <path
+                            fillRule="evenodd"
+                            d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
+                            clipRule="evenodd"
+                          />
+                        </svg>
+                      )}
+                    </button>
+                  ))}
+                </div>
               </div>
 
               <div className="flex gap-4">
@@ -270,6 +313,7 @@ export default function ProfilePage() {
               <button
                 onClick={() => {
                   setName(userProfile?.name || '');
+                  setAvatarColor(userProfile?.avatarColor || 'from-purple-400 to-blue-500');
                   setIsEditing(true);
                 }}
                 className="flex-1 px-6 py-3 bg-gradient-to-r from-purple-600 to-blue-600 text-white rounded-xl font-semibold hover:shadow-lg transition-all"
