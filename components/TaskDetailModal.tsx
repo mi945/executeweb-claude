@@ -18,6 +18,7 @@ interface Task {
     id: string;
     name?: string;
     profileImage?: string | null;
+    avatarColor?: string | null;
   };
   executions?: Array<{
     id: string;
@@ -117,7 +118,7 @@ export default function TaskDetailModal({ task, isOpen, onClose, activeUsers = [
                       className="w-12 h-12 rounded-full border-2 border-purple-200"
                     />
                   ) : (
-                    <div className="w-12 h-12 rounded-full bg-gradient-to-br from-purple-400 to-blue-400 flex items-center justify-center text-white font-bold text-lg">
+                    <div className={`w-12 h-12 rounded-full bg-gradient-to-br ${task.creator?.avatarColor || 'from-purple-400 to-blue-400'} flex items-center justify-center text-white font-bold text-lg`}>
                       {(task.creator?.name || 'A')[0].toUpperCase()}
                     </div>
                   )}

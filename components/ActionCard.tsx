@@ -22,6 +22,7 @@ interface Task {
     id: string;
     name: string;
     profileImage?: string;
+    avatarColor?: string;
   };
   executions?: Array<{
     id: string;
@@ -147,7 +148,7 @@ export default function ActionCard({
                   className="w-6 h-6 rounded-full object-cover"
                 />
               ) : (
-                <div className="w-6 h-6 rounded-full bg-gradient-to-br from-purple-400 to-blue-500 flex items-center justify-center text-white text-xs font-bold">
+                <div className={`w-6 h-6 rounded-full bg-gradient-to-br ${task.creator?.avatarColor || 'from-purple-400 to-blue-500'} flex items-center justify-center text-white text-xs font-bold`}>
                   {task.creator?.name?.charAt(0).toUpperCase() || '?'}
                 </div>
               )}
