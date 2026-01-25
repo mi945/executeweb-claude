@@ -227,7 +227,7 @@ export default function ProfilePage() {
           {/* Header Section */}
           <div className="bg-gradient-to-r from-purple-600 to-blue-600 px-8 py-12">
             <div className="flex items-center gap-6">
-              <div className="w-24 h-24 bg-white rounded-full flex items-center justify-center text-purple-600 text-4xl font-bold shadow-lg">
+              <div className={`w-24 h-24 bg-gradient-to-br ${userProfile?.avatarColor || 'from-purple-400 to-blue-500'} rounded-full flex items-center justify-center text-white text-4xl font-bold shadow-lg`}>
                 {userProfile?.name?.charAt(0).toUpperCase() || '?'}
               </div>
               <div className="text-white">
