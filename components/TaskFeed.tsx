@@ -253,6 +253,19 @@ export default function TaskFeed() {
     });
   };
 
+  const handleCardClick = (task: Task) => {
+    setSelectedTask(task);
+    setIsModalOpen(true);
+  };
+
+  const handleCloseModal = () => {
+    setIsModalOpen(false);
+    setTimeout(() => setSelectedTask(null), 300); // Delay clearing task until animation completes
+  };
+
+  // Get active users for the selected task
+  const activeUsers = useTaskPresence(selectedTask?.id || null);
+
   // Live Preview Component
   const LivePreview = () => {
     if (!newTask.title && !newTask.description && !imagePreview && !linkPreview) {
@@ -558,6 +571,14 @@ export default function TaskFeed() {
           No tasks yet. Be the first to create one!
         </motion.div>
       )}
+
+      {/* Task Detail Modal */}
+      <TaskDetailModal
+        task={selectedTask}
+        isOpen={isModalOpen}
+        onClose={handleCloseModal}
+        activeUsers={activeUsers}
+      />
     </div>
   );
 }
