@@ -1,8 +1,7 @@
 'use client';
 
 import { motion, AnimatePresence } from 'framer-motion';
-import { X } from 'lucide-react';
-import { formatDistanceToNow } from 'date-fns';
+import { getRelativeTime } from '@/lib/time';
 import { useEffect } from 'react';
 
 interface Task {
@@ -88,7 +87,9 @@ export default function TaskDetailModal({ task, isOpen, onClose, activeUsers = [
                 className="absolute top-6 right-6 p-2 rounded-full hover:bg-gray-100 transition-colors z-10"
                 aria-label="Close modal"
               >
-                <X className="w-6 h-6 text-gray-500" />
+                <svg className="w-6 h-6 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
               </button>
 
               {/* Content */}
@@ -120,7 +121,7 @@ export default function TaskDetailModal({ task, isOpen, onClose, activeUsers = [
                   <div>
                     <p className="font-semibold text-gray-900">{task.creator?.name || 'Anonymous'}</p>
                     <p className="text-sm text-gray-500">
-                      {formatDistanceToNow(task.createdAt, { addSuffix: true })}
+                      {getRelativeTime(task.createdAt)} ago
                     </p>
                   </div>
                 </div>
