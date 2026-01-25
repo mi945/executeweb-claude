@@ -264,7 +264,11 @@ export default function TaskFeed() {
   };
 
   // Get active users for the selected task
-  const activeUsers = useTaskPresence(selectedTask?.id || null);
+  const { activePresences } = useTaskPresence({
+    taskId: selectedTask?.id || '',
+    userProfile,
+    isExecuting: false, // Modal is read-only, not executing
+  });
 
   // Live Preview Component
   const LivePreview = () => {
@@ -578,7 +582,11 @@ export default function TaskFeed() {
         task={selectedTask}
         isOpen={isModalOpen}
         onClose={handleCloseModal}
-        activeUsers={activeUsers}
+        activeUsers={activePresences.map(p => ({
+          userId: p.odocId,
+          userName: p.odocName,
+          profileImage: p.odocAvatar,
+        }))}
       />
     </div>
   );
