@@ -11,6 +11,9 @@ interface Task {
   imageUrl?: string | null;
   externalLink?: string | null;
   createdAt: number;
+  eventDate?: string | null;
+  eventTime?: string | null;
+  eventLocation?: string | null;
   creator?: {
     id: string;
     name?: string;
@@ -130,6 +133,37 @@ export default function TaskDetailModal({ task, isOpen, onClose, activeUsers = [
                 <h1 className="text-4xl font-bold text-gray-900 leading-tight">
                   {task.title}
                 </h1>
+
+                {/* Event Details (if present) */}
+                {(task.eventDate || task.eventTime || task.eventLocation) && (
+                  <div className="flex flex-wrap items-center gap-4 text-slate-600">
+                    {task.eventDate && (
+                      <div className="flex items-center gap-2">
+                        <svg className="w-5 h-5 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                        </svg>
+                        <span className="font-medium">{new Date(task.eventDate).toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' })}</span>
+                      </div>
+                    )}
+                    {task.eventTime && (
+                      <div className="flex items-center gap-2">
+                        <svg className="w-5 h-5 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                        <span className="font-medium">{task.eventTime}</span>
+                      </div>
+                    )}
+                    {task.eventLocation && (
+                      <div className="flex items-center gap-2">
+                        <svg className="w-5 h-5 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                        </svg>
+                        <span className="font-medium">{task.eventLocation}</span>
+                      </div>
+                    )}
+                  </div>
+                )}
 
                 {/* External Link */}
                 {task.externalLink && (
