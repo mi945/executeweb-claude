@@ -36,6 +36,9 @@ export default function TaskFeed() {
     description: '',
     imageUrl: '',
     externalLink: '',
+    eventDate: '',
+    eventTime: '',
+    eventLocation: '',
   });
   const [imagePreview, setImagePreview] = useState<string>('');
   const [isUploading, setIsUploading] = useState(false);
@@ -45,6 +48,7 @@ export default function TaskFeed() {
   const [executingTaskId, setExecutingTaskId] = useState<string | null>(null);
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [showEventDetails, setShowEventDetails] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Extract link metadata

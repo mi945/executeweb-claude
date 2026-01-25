@@ -10,6 +10,9 @@ const schema = i.schema({
       imageUrl: i.string().optional(),
       externalLink: i.string().optional(),
       createdAt: i.number(),
+      eventDate: i.string().optional(),
+      eventTime: i.string().optional(),
+      eventLocation: i.string().optional(),
     }),
 
     // User executions of tasks (many-to-many junction)
