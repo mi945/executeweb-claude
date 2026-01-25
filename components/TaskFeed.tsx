@@ -5,6 +5,8 @@ import { motion, AnimatePresence } from 'framer-motion';
 import db from '@/lib/db';
 import { id } from '@instantdb/react';
 import ActionCard from './ActionCard';
+import TaskDetailModal from './TaskDetailModal';
+import { useTaskPresence } from '@/hooks/useTaskPresence';
 
 interface Task {
   id: string;
@@ -41,6 +43,8 @@ export default function TaskFeed() {
   const [isPublishing, setIsPublishing] = useState(false);
   const [expandedCards, setExpandedCards] = useState<Set<string>>(new Set());
   const [executingTaskId, setExecutingTaskId] = useState<string | null>(null);
+  const [selectedTask, setSelectedTask] = useState<Task | null>(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Extract link metadata
