@@ -291,7 +291,7 @@ export default function TaskFeed() {
   // Get active users for the selected task
   const { activePresences } = useTaskPresence({
     taskId: selectedTask?.id || '',
-    userProfile,
+    userProfile: userProfile || null,
     isExecuting: false, // Modal is read-only, not executing
   });
 
