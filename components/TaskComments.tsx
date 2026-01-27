@@ -143,7 +143,17 @@ export default function TaskComments({ taskId, compact = false }: TaskCommentsPr
     return `${Math.floor(seconds / 604800)}w`;
   };
 
-  const CommentItem = ({ comment, isReply = false, isLastReply = false }: { comment: Comment; isReply?: boolean; isLastReply?: boolean }) => {
+  const CommentItem = ({
+    comment,
+    isReply = false,
+    isLastReply = false,
+    rootParentId
+  }: {
+    comment: Comment;
+    isReply?: boolean;
+    isLastReply?: boolean;
+    rootParentId?: string;
+  }) => {
     const threadExpanded = expandedThreads.has(comment.id);
     const replyCount = comment.replies?.length || 0;
     const displayedReplies = threadExpanded ? comment.replies : comment.replies?.slice(0, 2);
@@ -189,7 +199,15 @@ export default function TaskComments({ taskId, compact = false }: TaskCommentsPr
 
             {/* Reply Button */}
             <button
-              onClick={() => handleReply(comment.id, comment.author?.name || 'Anonymous', isReply)}
+              onClick={() => {
+                if (isReply && rootParentId) {
+                  // Replying to a reply - link to root parent, mention this reply's author
+                  handleReply(rootParentId, comment.author?.name || 'Anonymous', true);
+                } else {
+                  // Replying to a parent comment
+                  handleReply(comment.id, comment.author?.name || 'Anonymous', false);
+                }
+              }}
               className="text-xs font-semibold text-gray-500 hover:text-gray-700 mt-1 transition-colors"
             >
               Reply
@@ -212,6 +230,7 @@ export default function TaskComments({ taskId, compact = false }: TaskCommentsPr
                     comment={reply}
                     isReply
                     isLastReply={index === displayedReplies.length - 1 && (!threadExpanded || replyCount <= 2)}
+                    rootParentId={comment.id}
                   />
                 </motion.div>
               ))}
