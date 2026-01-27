@@ -112,13 +112,8 @@ export default function TaskComments({ taskId, compact = false }: TaskCommentsPr
 
   const handleReply = (commentId: string, authorName: string, isLevel1: boolean) => {
     setReplyingTo({ commentId, authorName, isLevel1 });
-
-    // Auto-populate @mention for reply-to-reply
-    if (isLevel1) {
-      setCommentText(`@${authorName} `);
-    } else {
-      setCommentText('');
-    }
+    // Don't pre-populate @mention in text - it's displayed separately via mentionedUser
+    setCommentText('');
   };
 
   const toggleThread = (commentId: string) => {
@@ -194,7 +189,10 @@ export default function TaskComments({ taskId, compact = false }: TaskCommentsPr
               {comment.mentionedUser && (
                 <span className="text-blue-600 font-semibold">@{comment.mentionedUser} </span>
               )}
-              {comment.text}
+              {/* Strip duplicate @mention from text if it matches mentionedUser */}
+              {comment.mentionedUser && comment.text.startsWith(`@${comment.mentionedUser} `)
+                ? comment.text.slice(comment.mentionedUser.length + 2)
+                : comment.text}
             </p>
 
             {/* Reply Button */}
