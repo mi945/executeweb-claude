@@ -5,9 +5,10 @@ import { useFriendship, RelationshipStatus } from '@/hooks/useFriendship';
 
 interface FriendButtonProps {
   targetUserId: string;
+  compact?: boolean;
 }
 
-export default function FriendButton({ targetUserId }: FriendButtonProps) {
+export default function FriendButton({ targetUserId, compact }: FriendButtonProps) {
   const {
     getRelationshipStatus,
     sendFriendRequest,
@@ -31,12 +32,14 @@ export default function FriendButton({ targetUserId }: FriendButtonProps) {
     }
   };
 
+  const base = compact ? 'px-3 py-1.5 text-sm rounded-lg' : 'px-6 py-3 rounded-xl';
+
   if (status === 'none') {
     return (
       <button
         onClick={() => handleAction(() => sendFriendRequest(targetUserId))}
         disabled={loading}
-        className="px-6 py-3 bg-gradient-to-r from-purple-600 to-blue-600 text-white rounded-xl font-semibold hover:shadow-lg transition-all disabled:opacity-50"
+        className={`${base} bg-gradient-to-r from-purple-600 to-blue-600 text-white font-semibold hover:shadow-lg transition-all disabled:opacity-50`}
       >
         {loading ? 'Sending...' : 'Add Friend'}
       </button>
@@ -47,9 +50,9 @@ export default function FriendButton({ targetUserId }: FriendButtonProps) {
     return (
       <button
         disabled
-        className="px-6 py-3 bg-gray-200 text-gray-500 rounded-xl font-semibold cursor-not-allowed"
+        className={`${base} bg-gray-200 text-gray-500 font-semibold cursor-not-allowed`}
       >
-        Request Sent
+        Sent
       </button>
     );
   }
@@ -60,14 +63,14 @@ export default function FriendButton({ targetUserId }: FriendButtonProps) {
         <button
           onClick={() => handleAction(() => acceptFriendRequest(targetUserId))}
           disabled={loading}
-          className="px-6 py-3 bg-gradient-to-r from-green-500 to-emerald-600 text-white rounded-xl font-semibold hover:shadow-lg transition-all disabled:opacity-50"
+          className={`${base} bg-gradient-to-r from-green-500 to-emerald-600 text-white font-semibold hover:shadow-lg transition-all disabled:opacity-50`}
         >
-          {loading ? 'Accepting...' : 'Accept'}
+          {loading ? '...' : 'Accept'}
         </button>
         <button
           onClick={() => handleAction(() => ignoreFriendRequest(targetUserId))}
           disabled={loading}
-          className="px-6 py-3 bg-gray-200 text-gray-600 rounded-xl font-semibold hover:bg-gray-300 transition-all disabled:opacity-50"
+          className={`${base} bg-gray-200 text-gray-600 font-semibold hover:bg-gray-300 transition-all disabled:opacity-50`}
         >
           Ignore
         </button>
@@ -82,13 +85,13 @@ export default function FriendButton({ targetUserId }: FriendButtonProps) {
         <button
           onClick={() => handleAction(() => unfriend(targetUserId))}
           disabled={loading}
-          className="px-6 py-3 bg-red-500 text-white rounded-xl font-semibold hover:bg-red-600 transition-all disabled:opacity-50"
+          className={`${base} bg-red-500 text-white font-semibold hover:bg-red-600 transition-all disabled:opacity-50`}
         >
-          {loading ? 'Removing...' : 'Confirm Unfriend'}
+          {loading ? '...' : compact ? 'Unfriend' : 'Confirm Unfriend'}
         </button>
         <button
           onClick={() => setShowUnfriend(false)}
-          className="px-6 py-3 bg-gray-200 text-gray-600 rounded-xl font-semibold hover:bg-gray-300 transition-all"
+          className={`${base} bg-gray-200 text-gray-600 font-semibold hover:bg-gray-300 transition-all`}
         >
           Cancel
         </button>
@@ -99,7 +102,7 @@ export default function FriendButton({ targetUserId }: FriendButtonProps) {
   return (
     <button
       onClick={() => setShowUnfriend(true)}
-      className="px-6 py-3 bg-gray-100 text-green-600 rounded-xl font-semibold hover:bg-gray-200 transition-all border border-green-200"
+      className={`${base} bg-gray-100 text-green-600 font-semibold hover:bg-gray-200 transition-all border border-green-200`}
     >
       Friends &#10003;
     </button>
