@@ -92,7 +92,6 @@ export default function ProfilePage() {
     try {
       const formData = new FormData();
       formData.append('file', selectedFile);
-      formData.append('userId', user.id);
 
       const response = await fetch('/api/avatar/upload', {
         method: 'POST',
@@ -105,7 +104,7 @@ export default function ProfilePage() {
         throw new Error(result.error || 'Upload failed');
       }
 
-      // Update profile with new avatar URLs
+      // Update profile with new avatar base64 strings
       await db.transact([
         db.tx.profiles[user.id].update({
           profileImage: result.profileImage,
@@ -137,18 +136,6 @@ export default function ProfilePage() {
     setUploadError('');
 
     try {
-      // Delete from storage
-      await fetch('/api/avatar/delete', {
-        method: 'DELETE',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          profileImage: userProfile.profileImage,
-          thumbnailImage: userProfile.profileImageThumb,
-        }),
-      });
-
       // Update profile to remove avatar
       await db.transact([
         db.tx.profiles[user.id].update({

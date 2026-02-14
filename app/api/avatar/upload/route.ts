@@ -1,7 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { put } from '@vercel/blob';
 import sharp from 'sharp';
-import { v4 as uuidv4 } from 'uuid';
 
 const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
 const ALLOWED_TYPES = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
@@ -13,19 +11,11 @@ export async function POST(request: NextRequest) {
     // Get form data
     const formData = await request.formData();
     const file = formData.get('file') as File;
-    const userId = formData.get('userId') as string;
 
     // Validate required fields
     if (!file) {
       return NextResponse.json(
         { error: 'No file provided' },
-        { status: 400 }
-      );
-    }
-
-    if (!userId) {
-      return NextResponse.json(
-        { error: 'User ID is required' },
         { status: 400 }
       );
     }
@@ -50,10 +40,6 @@ export async function POST(request: NextRequest) {
     const arrayBuffer = await file.arrayBuffer();
     const buffer = Buffer.from(arrayBuffer);
 
-    // Generate unique filename
-    const uniqueId = uuidv4();
-    const baseFilename = `avatars/${userId}/${uniqueId}`;
-
     // Process profile image (512x512)
     const profileImage = await sharp(buffer)
       .rotate() // Auto-orient based on EXIF
@@ -61,7 +47,7 @@ export async function POST(request: NextRequest) {
         fit: 'cover',
         position: 'center',
       })
-      .webp({ quality: 85 }) // Convert to WebP and strip metadata
+      .jpeg({ quality: 85 }) // Convert to JPEG and strip metadata
       .toBuffer();
 
     // Process thumbnail (128x128)
@@ -71,39 +57,23 @@ export async function POST(request: NextRequest) {
         fit: 'cover',
         position: 'center',
       })
-      .webp({ quality: 80 }) // Convert to WebP and strip metadata
+      .jpeg({ quality: 80 }) // Convert to JPEG and strip metadata
       .toBuffer();
 
-    // Upload to Vercel Blob
-    const [profileBlob, thumbnailBlob] = await Promise.all([
-      put(`${baseFilename}.webp`, profileImage, {
-        access: 'public',
-        contentType: 'image/webp',
-        addRandomSuffix: false,
-      }),
-      put(`${baseFilename}_thumb.webp`, thumbnailImage, {
-        access: 'public',
-        contentType: 'image/webp',
-        addRandomSuffix: false,
-      }),
-    ]);
+    // Convert to base64
+    const profileImageBase64 = `data:image/jpeg;base64,${profileImage.toString('base64')}`;
+    const thumbnailImageBase64 = `data:image/jpeg;base64,${thumbnailImage.toString('base64')}`;
 
     return NextResponse.json({
       success: true,
-      profileImage: profileBlob.url,
-      thumbnailImage: thumbnailBlob.url,
+      profileImage: profileImageBase64,
+      thumbnailImage: thumbnailImageBase64,
     });
   } catch (error: any) {
-    console.error('Error uploading avatar:', error);
+    console.error('Error processing avatar:', error);
     return NextResponse.json(
-      { error: error.message || 'Failed to upload avatar' },
+      { error: error.message || 'Failed to process avatar' },
       { status: 500 }
     );
   }
 }
-
-export const config = {
-  api: {
-    bodyParser: false,
-  },
-};
