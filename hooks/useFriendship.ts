@@ -10,9 +10,21 @@ export type RelationshipStatus = 'none' | 'pending_outgoing' | 'pending_incoming
 const RATE_LIMIT = 20;
 const RATE_WINDOW_MS = 60 * 60 * 1000; // 1 hour
 
+// Deduplicate by profile ID, keeping the first occurrence
+function dedupeByProfileId(items: any[]): any[] {
+  const seen = new Set<string>();
+  return items.filter((item) => {
+    if (seen.has(item.id)) return false;
+    seen.add(item.id);
+    return true;
+  });
+}
+
 export function useFriendship() {
   const { user } = db.useAuth();
   const rateLimitRef = useRef<number[]>([]);
+  // Optimistic lock: track user IDs with in-flight requests to prevent duplicates
+  const inFlightRef = useRef<Set<string>>(new Set());
 
   // Query all relationships with linked profiles
   const { data } = db.useQuery({
@@ -56,23 +68,26 @@ export function useFriendship() {
     return getOutgoingEdges().filter((r: any) => r.status === 'accepted');
   }, [getOutgoingEdges]);
 
-  // Computed lists
+  // Computed lists — deduplicated by profile ID as a safety net
   const friends = useMemo(() => {
-    return getOutgoingEdges()
+    const raw = getOutgoingEdges()
       .filter((r: any) => r.status === 'accepted')
       .map((r: any) => ({ ...r.toUser, relationshipId: r.id }));
+    return dedupeByProfileId(raw);
   }, [getOutgoingEdges]);
 
   const incomingRequests = useMemo(() => {
-    return getIncomingEdges()
+    const raw = getIncomingEdges()
       .filter((r: any) => r.status === 'pending')
       .map((r: any) => ({ ...r.fromUser, relationshipId: r.id }));
+    return dedupeByProfileId(raw);
   }, [getIncomingEdges]);
 
   const outgoingRequests = useMemo(() => {
-    return getOutgoingEdges()
+    const raw = getOutgoingEdges()
       .filter((r: any) => r.status === 'pending')
       .map((r: any) => ({ ...r.toUser, relationshipId: r.id }));
+    return dedupeByProfileId(raw);
   }, [getOutgoingEdges]);
 
   const friendCount = friends.length;
@@ -95,6 +110,9 @@ export function useFriendship() {
   const getRelationshipStatus = useCallback(
     (otherUserId: string): RelationshipStatus => {
       if (!user?.id) return 'none';
+
+      // Check optimistic in-flight lock
+      if (inFlightRef.current.has(otherUserId)) return 'pending_outgoing';
 
       // Check outgoing
       const outgoing = getOutgoingEdges().find(
@@ -124,20 +142,79 @@ export function useFriendship() {
       if (toUserId === user.id) return; // no self-friending
       if (!checkRateLimit()) return;
 
+      // Optimistic lock: prevent concurrent sends to the same user
+      if (inFlightRef.current.has(toUserId)) return;
+
       // Check for existing relationship
       const status = getRelationshipStatus(toUserId);
       if (status !== 'none') return; // duplicate guard
 
-      // Check if there's a reciprocal pending request (they already sent us one)
-      const reciprocal = getIncomingEdges().find(
-        (r: any) => r.fromUser?.id === toUserId && r.status === 'pending'
-      );
+      // Mark as in-flight before the async transaction
+      inFlightRef.current.add(toUserId);
 
-      if (reciprocal) {
-        // Auto-accept: update their pending to accepted and create reciprocal accepted edge
+      try {
+        // Check if there's a reciprocal pending request (they already sent us one)
+        const reciprocal = getIncomingEdges().find(
+          (r: any) => r.fromUser?.id === toUserId && r.status === 'pending'
+        );
+
+        if (reciprocal) {
+          // Auto-accept: update their pending to accepted and create reciprocal accepted edge
+          const newId = id();
+          await db.transact([
+            db.tx.relationships[reciprocal.id].update({
+              status: 'accepted',
+              acceptedAt: Date.now(),
+            }),
+            db.tx.relationships[newId].update({
+              status: 'accepted',
+              createdAt: Date.now(),
+              acceptedAt: Date.now(),
+            }),
+            db.tx.profiles[user.id].link({ outgoingRelationships: newId }),
+            db.tx.profiles[toUserId].link({ incomingRelationships: newId }),
+          ]);
+          trackEvent('friend_request_accepted', { fromUserId: toUserId });
+          return;
+        }
+
+        // Create new pending request
         const newId = id();
         await db.transact([
-          db.tx.relationships[reciprocal.id].update({
+          db.tx.relationships[newId].update({
+            status: 'pending',
+            createdAt: Date.now(),
+          }),
+          db.tx.profiles[user.id].link({ outgoingRelationships: newId }),
+          db.tx.profiles[toUserId].link({ incomingRelationships: newId }),
+        ]);
+        trackEvent('friend_request_sent', { toUserId });
+      } finally {
+        // Release in-flight lock after transaction settles
+        inFlightRef.current.delete(toUserId);
+      }
+    },
+    [user?.id, myProfile, checkRateLimit, getRelationshipStatus, getIncomingEdges]
+  );
+
+  // Accept friend request
+  const acceptFriendRequest = useCallback(
+    async (fromUserId: string) => {
+      if (!user?.id || !myProfile) return;
+      if (inFlightRef.current.has(fromUserId)) return;
+      inFlightRef.current.add(fromUserId);
+
+      try {
+        // Find the incoming pending request
+        const incoming = getIncomingEdges().find(
+          (r: any) => r.fromUser?.id === fromUserId && r.status === 'pending'
+        );
+        if (!incoming) return;
+
+        // Update to accepted and create reciprocal edge
+        const newId = id();
+        await db.transact([
+          db.tx.relationships[incoming.id].update({
             status: 'accepted',
             acceptedAt: Date.now(),
           }),
@@ -147,54 +224,12 @@ export function useFriendship() {
             acceptedAt: Date.now(),
           }),
           db.tx.profiles[user.id].link({ outgoingRelationships: newId }),
-          db.tx.profiles[toUserId].link({ incomingRelationships: newId }),
+          db.tx.profiles[fromUserId].link({ incomingRelationships: newId }),
         ]);
-        trackEvent('friend_request_accepted', { fromUserId: toUserId });
-        return;
+        trackEvent('friend_request_accepted', { fromUserId });
+      } finally {
+        inFlightRef.current.delete(fromUserId);
       }
-
-      // Create new pending request
-      const newId = id();
-      await db.transact([
-        db.tx.relationships[newId].update({
-          status: 'pending',
-          createdAt: Date.now(),
-        }),
-        db.tx.profiles[user.id].link({ outgoingRelationships: newId }),
-        db.tx.profiles[toUserId].link({ incomingRelationships: newId }),
-      ]);
-      trackEvent('friend_request_sent', { toUserId });
-    },
-    [user?.id, myProfile, checkRateLimit, getRelationshipStatus, getIncomingEdges]
-  );
-
-  // Accept friend request
-  const acceptFriendRequest = useCallback(
-    async (fromUserId: string) => {
-      if (!user?.id || !myProfile) return;
-
-      // Find the incoming pending request
-      const incoming = getIncomingEdges().find(
-        (r: any) => r.fromUser?.id === fromUserId && r.status === 'pending'
-      );
-      if (!incoming) return;
-
-      // Update to accepted and create reciprocal edge
-      const newId = id();
-      await db.transact([
-        db.tx.relationships[incoming.id].update({
-          status: 'accepted',
-          acceptedAt: Date.now(),
-        }),
-        db.tx.relationships[newId].update({
-          status: 'accepted',
-          createdAt: Date.now(),
-          acceptedAt: Date.now(),
-        }),
-        db.tx.profiles[user.id].link({ outgoingRelationships: newId }),
-        db.tx.profiles[fromUserId].link({ incomingRelationships: newId }),
-      ]);
-      trackEvent('friend_request_accepted', { fromUserId });
     },
     [user?.id, myProfile, getIncomingEdges]
   );
@@ -220,16 +255,17 @@ export function useFriendship() {
     async (otherUserId: string) => {
       if (!user?.id) return;
 
-      const outgoing = getOutgoingEdges().find(
+      // Delete ALL edges between the two users (handles duplicates)
+      const outgoing = getOutgoingEdges().filter(
         (r: any) => r.toUser?.id === otherUserId
       );
-      const incoming = getIncomingEdges().find(
+      const incoming = getIncomingEdges().filter(
         (r: any) => r.fromUser?.id === otherUserId
       );
 
       const txns: any[] = [];
-      if (outgoing) txns.push(db.tx.relationships[outgoing.id].delete());
-      if (incoming) txns.push(db.tx.relationships[incoming.id].delete());
+      for (const r of outgoing) txns.push(db.tx.relationships[r.id].delete());
+      for (const r of incoming) txns.push(db.tx.relationships[r.id].delete());
 
       if (txns.length > 0) {
         await db.transact(txns);
