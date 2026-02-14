@@ -83,7 +83,7 @@ export default function UserProfilePage({ params }: { params: Promise<{ id: stri
                   className="w-24 h-24 rounded-full object-cover shadow-lg ring-4 ring-white/30"
                 />
               ) : (
-                <div className="w-24 h-24 bg-white rounded-full flex items-center justify-center text-purple-600 text-4xl font-bold shadow-lg">
+                <div className={`w-24 h-24 bg-gradient-to-br ${viewedProfile?.avatarColor || 'from-purple-400 to-blue-500'} rounded-full flex items-center justify-center text-white text-4xl font-bold shadow-lg ring-4 ring-white/30`}>
                   {viewedProfile?.name?.charAt(0).toUpperCase() || '?'}
                 </div>
               )}
