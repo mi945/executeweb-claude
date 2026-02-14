@@ -2,7 +2,7 @@
 
 import { useCallback, useMemo, useRef } from 'react';
 import db from '@/lib/db';
-import { id, tx } from '@instantdb/react';
+import { id } from '@instantdb/react';
 import { trackEvent } from '@/lib/analytics';
 
 export type RelationshipStatus = 'none' | 'pending_outgoing' | 'pending_incoming' | 'accepted';
@@ -35,10 +35,11 @@ export function useFriendship() {
   const allRelationships = data?.relationships ?? [];
 
   // Outgoing edges: relationships where I am the sender
+  // Note: fromUser/toUser are has:'one' links, so they are single objects (not arrays)
   const getOutgoingEdges = useCallback(() => {
     if (!user?.id) return [];
     return allRelationships.filter(
-      (r: any) => r.fromUser?.[0]?.id === user.id && r.toUser?.[0]
+      (r: any) => r.fromUser?.id === user.id && r.toUser
     );
   }, [allRelationships, user?.id]);
 
@@ -46,33 +47,32 @@ export function useFriendship() {
   const getIncomingEdges = useCallback(() => {
     if (!user?.id) return [];
     return allRelationships.filter(
-      (r: any) => r.toUser?.[0]?.id === user.id && r.fromUser?.[0]
+      (r: any) => r.toUser?.id === user.id && r.fromUser
     );
   }, [allRelationships, user?.id]);
 
   // Mutual accepted friends
   const getMutualAccepted = useCallback(() => {
-    const outgoing = getOutgoingEdges().filter((r: any) => r.status === 'accepted');
-    return outgoing;
+    return getOutgoingEdges().filter((r: any) => r.status === 'accepted');
   }, [getOutgoingEdges]);
 
   // Computed lists
   const friends = useMemo(() => {
     return getOutgoingEdges()
       .filter((r: any) => r.status === 'accepted')
-      .map((r: any) => r.toUser[0]);
+      .map((r: any) => r.toUser);
   }, [getOutgoingEdges]);
 
   const incomingRequests = useMemo(() => {
     return getIncomingEdges()
       .filter((r: any) => r.status === 'pending')
-      .map((r: any) => ({ ...r.fromUser[0], relationshipId: r.id }));
+      .map((r: any) => ({ ...r.fromUser, relationshipId: r.id }));
   }, [getIncomingEdges]);
 
   const outgoingRequests = useMemo(() => {
     return getOutgoingEdges()
       .filter((r: any) => r.status === 'pending')
-      .map((r: any) => ({ ...r.toUser[0], relationshipId: r.id }));
+      .map((r: any) => ({ ...r.toUser, relationshipId: r.id }));
   }, [getOutgoingEdges]);
 
   const friendCount = friends.length;
@@ -98,7 +98,7 @@ export function useFriendship() {
 
       // Check outgoing
       const outgoing = getOutgoingEdges().find(
-        (r: any) => r.toUser[0]?.id === otherUserId
+        (r: any) => r.toUser?.id === otherUserId
       );
       if (outgoing) {
         return outgoing.status === 'accepted' ? 'accepted' : 'pending_outgoing';
@@ -106,7 +106,7 @@ export function useFriendship() {
 
       // Check incoming
       const incoming = getIncomingEdges().find(
-        (r: any) => r.fromUser[0]?.id === otherUserId
+        (r: any) => r.fromUser?.id === otherUserId
       );
       if (incoming) {
         return incoming.status === 'accepted' ? 'accepted' : 'pending_incoming';
@@ -130,25 +130,24 @@ export function useFriendship() {
 
       // Check if there's a reciprocal pending request (they already sent us one)
       const reciprocal = getIncomingEdges().find(
-        (r: any) => r.fromUser[0]?.id === toUserId && r.status === 'pending'
+        (r: any) => r.fromUser?.id === toUserId && r.status === 'pending'
       );
 
       if (reciprocal) {
         // Auto-accept: update their pending to accepted and create reciprocal accepted edge
         const newId = id();
         await db.transact([
-          tx.relationships[reciprocal.id].update({
+          db.tx.relationships[reciprocal.id].update({
             status: 'accepted',
             acceptedAt: Date.now(),
           }),
-          tx.relationships[newId]
-            .update({
-              status: 'accepted',
-              createdAt: Date.now(),
-              acceptedAt: Date.now(),
-            })
-            .link({ fromUser: user.id })
-            .link({ toUser: toUserId }),
+          db.tx.relationships[newId].update({
+            status: 'accepted',
+            createdAt: Date.now(),
+            acceptedAt: Date.now(),
+          }),
+          db.tx.profiles[user.id].link({ outgoingRelationships: newId }),
+          db.tx.profiles[toUserId].link({ incomingRelationships: newId }),
         ]);
         trackEvent('friend_request_accepted', { fromUserId: toUserId });
         return;
@@ -157,13 +156,12 @@ export function useFriendship() {
       // Create new pending request
       const newId = id();
       await db.transact([
-        tx.relationships[newId]
-          .update({
-            status: 'pending',
-            createdAt: Date.now(),
-          })
-          .link({ fromUser: user.id })
-          .link({ toUser: toUserId }),
+        db.tx.relationships[newId].update({
+          status: 'pending',
+          createdAt: Date.now(),
+        }),
+        db.tx.profiles[user.id].link({ outgoingRelationships: newId }),
+        db.tx.profiles[toUserId].link({ incomingRelationships: newId }),
       ]);
       trackEvent('friend_request_sent', { toUserId });
     },
@@ -177,25 +175,24 @@ export function useFriendship() {
 
       // Find the incoming pending request
       const incoming = getIncomingEdges().find(
-        (r: any) => r.fromUser[0]?.id === fromUserId && r.status === 'pending'
+        (r: any) => r.fromUser?.id === fromUserId && r.status === 'pending'
       );
       if (!incoming) return;
 
       // Update to accepted and create reciprocal edge
       const newId = id();
       await db.transact([
-        tx.relationships[incoming.id].update({
+        db.tx.relationships[incoming.id].update({
           status: 'accepted',
           acceptedAt: Date.now(),
         }),
-        tx.relationships[newId]
-          .update({
-            status: 'accepted',
-            createdAt: Date.now(),
-            acceptedAt: Date.now(),
-          })
-          .link({ fromUser: user.id })
-          .link({ toUser: fromUserId }),
+        db.tx.relationships[newId].update({
+          status: 'accepted',
+          createdAt: Date.now(),
+          acceptedAt: Date.now(),
+        }),
+        db.tx.profiles[user.id].link({ outgoingRelationships: newId }),
+        db.tx.profiles[fromUserId].link({ incomingRelationships: newId }),
       ]);
       trackEvent('friend_request_accepted', { fromUserId });
     },
@@ -208,11 +205,11 @@ export function useFriendship() {
       if (!user?.id) return;
 
       const incoming = getIncomingEdges().find(
-        (r: any) => r.fromUser[0]?.id === fromUserId && r.status === 'pending'
+        (r: any) => r.fromUser?.id === fromUserId && r.status === 'pending'
       );
       if (!incoming) return;
 
-      await db.transact([tx.relationships[incoming.id].delete()]);
+      await db.transact([db.tx.relationships[incoming.id].delete()]);
       trackEvent('friend_request_ignored', { fromUserId });
     },
     [user?.id, getIncomingEdges]
@@ -224,15 +221,15 @@ export function useFriendship() {
       if (!user?.id) return;
 
       const outgoing = getOutgoingEdges().find(
-        (r: any) => r.toUser[0]?.id === otherUserId
+        (r: any) => r.toUser?.id === otherUserId
       );
       const incoming = getIncomingEdges().find(
-        (r: any) => r.fromUser[0]?.id === otherUserId
+        (r: any) => r.fromUser?.id === otherUserId
       );
 
       const txns: any[] = [];
-      if (outgoing) txns.push(tx.relationships[outgoing.id].delete());
-      if (incoming) txns.push(tx.relationships[incoming.id].delete());
+      if (outgoing) txns.push(db.tx.relationships[outgoing.id].delete());
+      if (incoming) txns.push(db.tx.relationships[incoming.id].delete());
 
       if (txns.length > 0) {
         await db.transact(txns);
@@ -243,22 +240,15 @@ export function useFriendship() {
   );
 
   return {
-    // Computed data
     friends,
     incomingRequests,
     outgoingRequests,
     friendCount,
-
-    // Status helper
     getRelationshipStatus,
-
-    // Actions
     sendFriendRequest,
     acceptFriendRequest,
     ignoreFriendRequest,
     unfriend,
-
-    // Future-proof helpers
     getOutgoingEdges,
     getIncomingEdges,
     getMutualAccepted,
