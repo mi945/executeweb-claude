@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import db from '@/lib/db';
 import AuthForm from '@/components/AuthForm';
@@ -15,6 +15,28 @@ export default function Home() {
   const [activeTab, setActiveTab] = useState<'discover' | 'actions' | 'pulse'>(
     'discover'
   );
+  const [todayCompletions, setTodayCompletions] = useState<number>(0);
+
+  // Query all executions to calculate today's completions
+  const { data } = db.useQuery({
+    executions: {},
+  });
+
+  useEffect(() => {
+    if (data?.executions) {
+      // Get start of today in milliseconds
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      const todayStart = today.getTime();
+
+      // Filter executions completed today
+      const completedToday = (data.executions as any[]).filter(
+        (e) => e.completed && e.completedAt && e.completedAt >= todayStart
+      );
+
+      setTodayCompletions(completedToday.length);
+    }
+  }, [data]);
 
   return (
     <>
@@ -115,16 +137,8 @@ export default function Home() {
                   <div className="space-y-3">
                     <div className="flex items-center justify-between">
                       <span className="text-gray-600">Global Completions</span>
-                      <span className="font-bold text-purple-600">
-                        {/* Will be populated by real data */}
-                        --
-                      </span>
-                    </div>
-                    <div className="flex items-center justify-between">
-                      <span className="text-gray-600">Active Users</span>
-                      <span className="font-bold text-blue-600">
-                        {/* Will be populated by real data */}
-                        --
+                      <span className="font-bold text-purple-600 text-2xl">
+                        {todayCompletions}
                       </span>
                     </div>
                   </div>
