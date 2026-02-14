@@ -14,6 +14,8 @@ interface Comment {
     id: string;
     name?: string;
     avatarColor?: string;
+    profileImage?: string;
+    profileImageThumb?: string;
   };
   replies?: Comment[];
   parentComment?: {
@@ -165,14 +167,22 @@ export default function TaskComments({ taskId, compact = false }: TaskCommentsPr
 
         <div className={`flex gap-3 ${isReply ? 'pl-8' : ''}`}>
           {/* Avatar */}
-          <div
-            className={`${isReply ? 'w-6 h-6' : 'w-8 h-8'} rounded-full bg-gradient-to-br ${
-              isReply ? 'from-gray-300 to-gray-400' : (comment.author?.avatarColor || 'from-purple-400 to-blue-500')
-            } flex items-center justify-center text-white font-bold flex-shrink-0`}
-            style={{ fontSize: isReply ? '0.6rem' : '0.75rem' }}
-          >
-            {comment.author?.name?.charAt(0).toUpperCase() || '?'}
-          </div>
+          {comment.author?.profileImageThumb || comment.author?.profileImage ? (
+            <img
+              src={comment.author.profileImageThumb || comment.author.profileImage}
+              alt={comment.author.name}
+              className={`${isReply ? 'w-6 h-6' : 'w-8 h-8'} rounded-full object-cover flex-shrink-0`}
+            />
+          ) : (
+            <div
+              className={`${isReply ? 'w-6 h-6' : 'w-8 h-8'} rounded-full bg-gradient-to-br ${
+                isReply ? 'from-gray-300 to-gray-400' : (comment.author?.avatarColor || 'from-purple-400 to-blue-500')
+              } flex items-center justify-center text-white font-bold flex-shrink-0`}
+              style={{ fontSize: isReply ? '0.6rem' : '0.75rem' }}
+            >
+              {comment.author?.name?.charAt(0).toUpperCase() || '?'}
+            </div>
+          )}
 
           {/* Comment Content */}
           <div className="flex-1 min-w-0">
