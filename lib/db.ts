@@ -38,6 +38,13 @@ const schema = i.schema({
       createdAt: i.number(),
       mentionedUser: i.string().optional(), // @username for reply-to-reply
     }),
+
+    // Friend relationships (directional edges)
+    relationships: i.entity({
+      status: i.string(), // 'pending' | 'accepted'
+      createdAt: i.number(),
+      acceptedAt: i.number().optional(),
+    }),
   },
   links: {
     // Task creator relationship (one-to-many)
@@ -121,6 +128,34 @@ const schema = i.schema({
         on: 'comments',
         has: 'one',
         label: 'parentComment',
+      },
+    },
+
+    // Relationship from user (who sent the request)
+    relationshipFromUser: {
+      forward: {
+        on: 'relationships',
+        has: 'one',
+        label: 'fromUser',
+      },
+      reverse: {
+        on: 'profiles',
+        has: 'many',
+        label: 'outgoingRelationships',
+      },
+    },
+
+    // Relationship to user (who received the request)
+    relationshipToUser: {
+      forward: {
+        on: 'relationships',
+        has: 'one',
+        label: 'toUser',
+      },
+      reverse: {
+        on: 'profiles',
+        has: 'many',
+        label: 'incomingRelationships',
       },
     },
   },
