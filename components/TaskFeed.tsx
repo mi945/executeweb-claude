@@ -360,9 +360,9 @@ export default function TaskFeed() {
           whileHover={{ scale: 1.05 }}
           whileTap={{ scale: 0.95 }}
           onClick={() => setShowCreateForm(!showCreateForm)}
-          className="px-6 py-2 bg-gradient-to-r from-purple-600 to-blue-600 text-white rounded-xl font-semibold hover:shadow-lg transition-all"
+          className="px-8 py-4 text-lg bg-gradient-to-r from-purple-600 to-blue-600 text-white rounded-xl font-semibold hover:shadow-lg transition-all"
         >
-          {showCreateForm ? 'Cancel' : '+ Create Task'}
+          {showCreateForm ? 'Cancel' : '+ Create Challenge'}
         </motion.button>
       </div>
 
