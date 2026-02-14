@@ -60,7 +60,7 @@ export function useFriendship() {
   const friends = useMemo(() => {
     return getOutgoingEdges()
       .filter((r: any) => r.status === 'accepted')
-      .map((r: any) => r.toUser);
+      .map((r: any) => ({ ...r.toUser, relationshipId: r.id }));
   }, [getOutgoingEdges]);
 
   const incomingRequests = useMemo(() => {

@@ -139,7 +139,7 @@ export default function FriendsList() {
           <div className="space-y-3">
             {incomingRequests.map((req: any) => (
               <div
-                key={req.id}
+                key={req.relationshipId}
                 className="flex items-center justify-between p-3 rounded-xl bg-purple-50"
               >
                 <button
@@ -192,7 +192,7 @@ export default function FriendsList() {
           <div className="space-y-3">
             {friends.map((friend: any) => (
               <button
-                key={friend.id}
+                key={friend.relationshipId}
                 onClick={() => router.push(`/profile/${friend.id}`)}
                 className="flex items-center gap-3 p-3 rounded-xl hover:bg-gray-50 transition-colors w-full text-left"
               >
@@ -247,7 +247,7 @@ export default function FriendsList() {
           <div className="space-y-3">
             {outgoingRequests.map((req: any) => (
               <div
-                key={req.id}
+                key={req.relationshipId}
                 className="flex items-center justify-between p-3 rounded-xl bg-gray-50"
               >
                 <button
