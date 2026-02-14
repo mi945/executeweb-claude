@@ -10,6 +10,8 @@ interface Execution {
     id: string;
     name?: string;
     profileImage?: string;
+    profileImageThumb?: string;
+    avatarColor?: string;
   };
 }
 
@@ -43,14 +45,14 @@ export default function WallOfFame({ executions }: WallOfFameProps) {
               style={{ zIndex: displayedAvatars.length - i }}
               title={exec.user?.name}
             >
-              {exec.user?.profileImage ? (
+              {exec.user?.profileImageThumb || exec.user?.profileImage ? (
                 <img
-                  src={exec.user.profileImage}
+                  src={exec.user.profileImageThumb || exec.user.profileImage}
                   alt={exec.user.name}
                   className="w-6 h-6 rounded-full border-2 border-white object-cover"
                 />
               ) : (
-                <div className="w-6 h-6 rounded-full border-2 border-white bg-gradient-to-br from-green-400 to-emerald-500 flex items-center justify-center text-white text-xs font-bold">
+                <div className={`w-6 h-6 rounded-full border-2 border-white bg-gradient-to-br ${exec.user?.avatarColor || 'from-green-400 to-emerald-500'} flex items-center justify-center text-white text-xs font-bold`}>
                   {exec.user?.name?.charAt(0).toUpperCase() || '?'}
                 </div>
               )}
