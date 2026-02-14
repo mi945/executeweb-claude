@@ -3,6 +3,7 @@
 import { use } from 'react';
 import { useRouter } from 'next/navigation';
 import db from '@/lib/db';
+import FriendButton from '@/components/FriendButton';
 
 export default function UserProfilePage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
@@ -160,17 +161,19 @@ export default function UserProfilePage({ params }: { params: Promise<{ id: stri
               </div>
             </div>
 
-            {/* Action Buttons - only show for own profile */}
-            {isOwnProfile && (
-              <div className="flex gap-4 pt-6">
+            {/* Action Buttons */}
+            <div className="flex gap-4 pt-6">
+              {isOwnProfile ? (
                 <button
                   onClick={() => router.push('/profile')}
                   className="flex-1 px-6 py-3 bg-gradient-to-r from-purple-600 to-blue-600 text-white rounded-xl font-semibold hover:shadow-lg transition-all"
                 >
                   Edit Profile
                 </button>
-              </div>
-            )}
+              ) : (
+                <FriendButton targetUserId={id} />
+              )}
+            </div>
           </div>
         </div>
       </div>

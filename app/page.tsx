@@ -9,13 +9,17 @@ import ActionDrawer from '@/components/ActionDrawer';
 import PulseFeed from '@/components/PulseFeed';
 import UserProfile from '@/components/UserProfile';
 import NudgeNotifications from '@/components/NudgeNotifications';
+import FriendsList from '@/components/FriendsList';
+import { useFriendship } from '@/hooks/useFriendship';
 
 export default function Home() {
   const router = useRouter();
-  const [activeTab, setActiveTab] = useState<'discover' | 'actions' | 'pulse'>(
+  const [activeTab, setActiveTab] = useState<'discover' | 'actions' | 'pulse' | 'friends'>(
     'discover'
   );
   const [todayCompletions, setTodayCompletions] = useState<number>(0);
+  const { incomingRequests } = useFriendship();
+  const pendingCount = incomingRequests.length;
 
   // Query all executions to calculate today's completions
   const { data } = db.useQuery({
