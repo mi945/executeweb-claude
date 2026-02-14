@@ -42,9 +42,17 @@ export default function UserProfile() {
   return (
     <div className="bg-white rounded-2xl shadow-lg p-6">
       <div className="flex items-center gap-4 mb-4">
-        <div className="w-16 h-16 bg-gradient-to-br from-purple-500 to-blue-500 rounded-full flex items-center justify-center text-white text-2xl font-bold">
-          {userProfile?.name?.charAt(0).toUpperCase() || '?'}
-        </div>
+        {userProfile?.profileImageThumb ? (
+          <img
+            src={userProfile.profileImageThumb}
+            alt={userProfile.name || 'Profile'}
+            className="w-16 h-16 rounded-full object-cover shadow-lg"
+          />
+        ) : (
+          <div className={`w-16 h-16 bg-gradient-to-br ${userProfile?.avatarColor || 'from-purple-500 to-blue-500'} rounded-full flex items-center justify-center text-white text-2xl font-bold`}>
+            {userProfile?.name?.charAt(0).toUpperCase() || '?'}
+          </div>
+        )}
 
         <div className="flex-1">
           <h3 className="text-xl font-bold text-gray-900">
