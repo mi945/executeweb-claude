@@ -21,11 +21,25 @@ interface AnalyticsData {
   }>;
 }
 
+// Admin email whitelist
+const ADMIN_EMAILS = ['michaelkgaba@gmail.com'];
+
 export default function AdminDashboard() {
   const router = useRouter();
   const { user } = db.useAuth();
   const [analyticsData, setAnalyticsData] = useState<AnalyticsData | null>(null);
   const [loading, setLoading] = useState(true);
+  const [isAuthorized, setIsAuthorized] = useState(false);
+
+  // Check if user is authorized admin
+  useEffect(() => {
+    if (user?.email && ADMIN_EMAILS.includes(user.email)) {
+      setIsAuthorized(true);
+    } else if (user) {
+      // User is logged in but not admin - redirect
+      router.push('/');
+    }
+  }, [user, router]);
 
   // Query all data from InstantDB
   const { data } = db.useQuery({
@@ -97,12 +111,14 @@ export default function AdminDashboard() {
     }
   }, [user, router]);
 
-  if (!user || loading) {
+  if (!user || loading || !isAuthorized) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-purple-50 to-blue-50 flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600 mx-auto mb-4"></div>
-          <p className="text-gray-600">Loading analytics...</p>
+          <p className="text-gray-600">
+            {!isAuthorized && user ? 'Access denied...' : 'Loading analytics...'}
+          </p>
         </div>
       </div>
     );
