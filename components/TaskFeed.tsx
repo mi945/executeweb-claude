@@ -302,24 +302,45 @@ export default function TaskFeed() {
   };
 
   const handleComplete = async (executionId: string) => {
-    setCompletingExecutionId(executionId);
-
-    // Find the task for this execution to show celebration
+    // Find the task for this execution
     const task = tasks.find(t => t.executions?.some(e => e.id === executionId));
 
+    if (!task) return;
+
+    // Show proof upload modal
+    setPendingExecutionId(executionId);
+    setPendingTaskTitle(task.title);
+    setIsProofModalOpen(true);
+  };
+
+  const handleProofSubmit = async (proofImageUrl: string) => {
+    if (!pendingExecutionId) return;
+
+    setCompletingExecutionId(pendingExecutionId);
+
+    // Find the task for celebration
+    const task = tasks.find(t => t.executions?.some(e => e.id === pendingExecutionId));
+
     try {
-      // Update execution to completed
+      // Calculate proof expiration (7 days from now)
+      const proofExpiresAt = Date.now() + (7 * 24 * 60 * 60 * 1000);
+
+      // Update execution to completed with proof
       await db.transact([
-        db.tx.executions[executionId].update({
+        db.tx.executions[pendingExecutionId].update({
           completed: true,
           completedAt: Date.now(),
+          proofImageUrl,
+          proofUploadedAt: Date.now(),
+          proofExpiresAt,
         }),
       ]);
 
       // Track task completion
       trackEvent('task_completed', {
         taskId: task?.id,
-        executionId,
+        executionId: pendingExecutionId,
+        hasProof: true,
       });
 
       // Trigger celebration animation
@@ -329,9 +350,77 @@ export default function TaskFeed() {
       }
 
       // Mark any linked challenge invite as completed
-      await markChallengeCompleted(executionId);
+      await markChallengeCompleted(pendingExecutionId);
 
       // Update user streak (simplified logic)
+      if (userProfile) {
+        const today = new Date().setHours(0, 0, 0, 0);
+        const lastCompletion = userProfile.lastCompletionDate
+          ? new Date(userProfile.lastCompletionDate).setHours(0, 0, 0, 0)
+          : 0;
+        const daysSince = Math.floor((today - lastCompletion) / (1000 * 60 * 60 * 24));
+
+        let newStreak = userProfile.dailyStreak || 0;
+        if (daysSince === 1) {
+          newStreak += 1;
+        } else if (daysSince > 1) {
+          newStreak = 1;
+        }
+
+        await db.transact([
+          db.tx.profiles[userProfile.id].update({
+            dailyStreak: newStreak,
+            lastCompletionDate: Date.now(),
+          }),
+        ]);
+      }
+
+      // Close proof modal
+      setIsProofModalOpen(false);
+      setPendingExecutionId(null);
+      setPendingTaskTitle('');
+    } catch (err: any) {
+      alert('Error completing task: ' + err.message);
+      throw err; // Re-throw to let modal handle the error
+    } finally {
+      setCompletingExecutionId(null);
+    }
+  };
+
+  const handleProofSkip = async () => {
+    if (!pendingExecutionId) return;
+
+    setCompletingExecutionId(pendingExecutionId);
+
+    // Find the task for celebration
+    const task = tasks.find(t => t.executions?.some(e => e.id === pendingExecutionId));
+
+    try {
+      // Update execution to completed without proof
+      await db.transact([
+        db.tx.executions[pendingExecutionId].update({
+          completed: true,
+          completedAt: Date.now(),
+        }),
+      ]);
+
+      // Track task completion
+      trackEvent('task_completed', {
+        taskId: task?.id,
+        executionId: pendingExecutionId,
+        hasProof: false,
+      });
+
+      // Trigger celebration animation
+      if (task) {
+        setCelebratingTaskId(task.id);
+        setTimeout(() => setCelebratingTaskId(null), 3000);
+      }
+
+      // Mark any linked challenge invite as completed
+      await markChallengeCompleted(pendingExecutionId);
+
+      // Update user streak
       if (userProfile) {
         const today = new Date().setHours(0, 0, 0, 0);
         const lastCompletion = userProfile.lastCompletionDate
@@ -357,6 +446,9 @@ export default function TaskFeed() {
       alert('Error completing task: ' + err.message);
     } finally {
       setCompletingExecutionId(null);
+      setIsProofModalOpen(false);
+      setPendingExecutionId(null);
+      setPendingTaskTitle('');
     }
   };
 
@@ -820,6 +912,19 @@ export default function TaskFeed() {
         friends={friends}
         onSend={sendChallenge}
         hasPendingInvite={hasPendingInvite}
+      />
+
+      {/* Proof Upload Modal */}
+      <ProofUploadModal
+        isOpen={isProofModalOpen}
+        taskTitle={pendingTaskTitle}
+        onSubmit={handleProofSubmit}
+        onSkip={handleProofSkip}
+        onClose={() => {
+          setIsProofModalOpen(false);
+          setPendingExecutionId(null);
+          setPendingTaskTitle('');
+        }}
       />
     </div>
   );
