@@ -45,6 +45,15 @@ const schema = i.schema({
       createdAt: i.number(),
       acceptedAt: i.number().optional(),
     }),
+
+    // Challenge invites between friends for existing tasks
+    challengeInvites: i.entity({
+      message: i.string().optional(),
+      status: i.string(), // 'pending' | 'accepted' | 'declined' | 'completed'
+      createdAt: i.number(),
+      respondedAt: i.number().optional(),
+      completedAt: i.number().optional(),
+    }),
   },
   links: {
     // Task creator relationship (one-to-many)
@@ -156,6 +165,62 @@ const schema = i.schema({
         on: 'profiles',
         has: 'many',
         label: 'incomingRelationships',
+      },
+    },
+
+    // Challenge invite sender
+    challengeFromUser: {
+      forward: {
+        on: 'challengeInvites',
+        has: 'one',
+        label: 'fromUser',
+      },
+      reverse: {
+        on: 'profiles',
+        has: 'many',
+        label: 'sentChallenges',
+      },
+    },
+
+    // Challenge invite recipient
+    challengeToUser: {
+      forward: {
+        on: 'challengeInvites',
+        has: 'one',
+        label: 'toUser',
+      },
+      reverse: {
+        on: 'profiles',
+        has: 'many',
+        label: 'receivedChallenges',
+      },
+    },
+
+    // Challenge invite linked task
+    challengeTask: {
+      forward: {
+        on: 'challengeInvites',
+        has: 'one',
+        label: 'task',
+      },
+      reverse: {
+        on: 'tasks',
+        has: 'many',
+        label: 'challengeInvites',
+      },
+    },
+
+    // Challenge invite linked execution (created on accept)
+    challengeExecution: {
+      forward: {
+        on: 'challengeInvites',
+        has: 'one',
+        label: 'execution',
+      },
+      reverse: {
+        on: 'executions',
+        has: 'one',
+        label: 'challengeInvite',
       },
     },
   },
