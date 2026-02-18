@@ -65,23 +65,88 @@ export default function ActionDrawer() {
     .sort((a, b) => (b.completedAt || 0) - (a.completedAt || 0));
 
   const handleComplete = async (execution: Execution) => {
+    // Show proof upload modal
+    setPendingExecution(execution);
+    setIsProofModalOpen(true);
+  };
+
+  const handleProofSubmit = async (proofImageUrl: string) => {
+    if (!pendingExecution) return;
+
     try {
-      // Update execution to completed
+      // Calculate proof expiration (7 days from now)
+      const proofExpiresAt = Date.now() + (7 * 24 * 60 * 60 * 1000);
+
+      // Update execution to completed with proof
       await db.transact([
-        db.tx.executions[execution.id].update({
+        db.tx.executions[pendingExecution.id].update({
+          completed: true,
+          completedAt: Date.now(),
+          proofImageUrl,
+          proofUploadedAt: Date.now(),
+          proofExpiresAt,
+        }),
+      ]);
+
+      // Trigger celebration animation
+      setCelebrateId(pendingExecution.id);
+      setTimeout(() => setCelebrateId(null), 2000);
+
+      // Mark any linked challenge invite as completed
+      await markChallengeCompleted(pendingExecution.id);
+
+      // Update user streak
+      if (userProfile) {
+        const today = new Date().setHours(0, 0, 0, 0);
+        const lastCompletion = userProfile.lastCompletionDate
+          ? new Date(userProfile.lastCompletionDate).setHours(0, 0, 0, 0)
+          : 0;
+        const daysSince = Math.floor((today - lastCompletion) / (1000 * 60 * 60 * 24));
+
+        let newStreak = userProfile.dailyStreak || 0;
+        if (daysSince === 1) {
+          newStreak += 1;
+        } else if (daysSince > 1) {
+          newStreak = 1;
+        }
+
+        await db.transact([
+          db.tx.profiles[userProfile.id].update({
+            dailyStreak: newStreak,
+            lastCompletionDate: Date.now(),
+          }),
+        ]);
+      }
+
+      // Close proof modal
+      setIsProofModalOpen(false);
+      setPendingExecution(null);
+    } catch (err: any) {
+      alert('Error completing task: ' + err.message);
+      throw err; // Re-throw to let modal handle the error
+    }
+  };
+
+  const handleProofSkip = async () => {
+    if (!pendingExecution) return;
+
+    try {
+      // Update execution to completed without proof
+      await db.transact([
+        db.tx.executions[pendingExecution.id].update({
           completed: true,
           completedAt: Date.now(),
         }),
       ]);
 
       // Trigger celebration animation
-      setCelebrateId(execution.id);
+      setCelebrateId(pendingExecution.id);
       setTimeout(() => setCelebrateId(null), 2000);
 
       // Mark any linked challenge invite as completed
-      await markChallengeCompleted(execution.id);
+      await markChallengeCompleted(pendingExecution.id);
 
-      // Update user streak (simplified logic)
+      // Update user streak
       if (userProfile) {
         const today = new Date().setHours(0, 0, 0, 0);
         const lastCompletion = userProfile.lastCompletionDate
@@ -105,6 +170,9 @@ export default function ActionDrawer() {
       }
     } catch (err: any) {
       alert('Error completing task: ' + err.message);
+    } finally {
+      setIsProofModalOpen(false);
+      setPendingExecution(null);
     }
   };
 
@@ -357,6 +425,18 @@ export default function ActionDrawer() {
           </div>
         </div>
       )}
+
+      {/* Proof Upload Modal */}
+      <ProofUploadModal
+        isOpen={isProofModalOpen}
+        taskTitle={pendingExecution?.task.title || ''}
+        onSubmit={handleProofSubmit}
+        onSkip={handleProofSkip}
+        onClose={() => {
+          setIsProofModalOpen(false);
+          setPendingExecution(null);
+        }}
+      />
     </div>
   );
 }
