@@ -783,6 +783,17 @@ export default function TaskFeed() {
           profileImage: p.odocAvatar,
         }))}
       />
+
+      {/* Challenge a Friend Modal */}
+      <ChallengeFriendModal
+        isOpen={isChallengeModalOpen}
+        onClose={handleCloseChallengeModal}
+        taskTitle={challengeTask?.title || ''}
+        taskId={challengeTask?.id || ''}
+        friends={friends}
+        onSend={sendChallenge}
+        hasPendingInvite={hasPendingInvite}
+      />
     </div>
   );
 }
