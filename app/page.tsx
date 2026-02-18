@@ -52,7 +52,7 @@ export default function Home() {
       const profile = data?.profiles?.[0];
 
       identifyUser(user.id, {
-        email: user.email,
+        email: user.email || undefined,
         name: profile?.name,
         profileImage: profile?.profileImage,
         avatarColor: profile?.avatarColor,
