@@ -3,23 +3,6 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import db from '@/lib/db';
-import { posthog } from '@/lib/analytics';
-
-interface AnalyticsData {
-  totalUsers: number;
-  activeToday: number;
-  totalTasks: number;
-  totalCompletions: number;
-  totalChallenges: number;
-  totalFriendships: number;
-  tasksCreatedToday: number;
-  completionsToday: number;
-  recentActivity: Array<{
-    event: string;
-    timestamp: number;
-    properties: any;
-  }>;
-}
 
 // Admin email whitelist
 const ADMIN_EMAILS = ['michaelkgaba@gmail.com'];
@@ -27,16 +10,19 @@ const ADMIN_EMAILS = ['michaelkgaba@gmail.com'];
 export default function AdminDashboard() {
   const router = useRouter();
   const { user } = db.useAuth();
-  const [analyticsData, setAnalyticsData] = useState<AnalyticsData | null>(null);
   const [loading, setLoading] = useState(true);
   const [isAuthorized, setIsAuthorized] = useState(false);
+  const [selectedTasks, setSelectedTasks] = useState<Set<string>>(new Set());
+  const [deleting, setDeleting] = useState(false);
+  const [showDeleteAllConfirm, setShowDeleteAllConfirm] = useState(false);
+  const [showBulkDeleteConfirm, setShowBulkDeleteConfirm] = useState(false);
+  const [deleteLog, setDeleteLog] = useState<string[]>([]);
 
   // Check if user is authorized admin
   useEffect(() => {
     if (user?.email && ADMIN_EMAILS.includes(user.email)) {
       setIsAuthorized(true);
     } else if (user) {
-      // User is logged in but not admin - redirect
       router.push('/');
     }
   }, [user, router]);
@@ -45,63 +31,21 @@ export default function AdminDashboard() {
   const { data } = db.useQuery({
     profiles: {},
     tasks: {
+      creator: {},
       executions: {},
+      comments: {},
+      challengeInvites: {},
     },
     executions: {},
-    challengeInvites: {},
+    challengeInvites: {
+      execution: {},
+    },
     relationships: {},
+    comments: {},
   });
 
   useEffect(() => {
-    if (!data) return;
-
-    // Calculate metrics from InstantDB
-    const profiles = data.profiles || [];
-    const tasks = data.tasks || [];
-    const executions = data.executions || [];
-    const challenges = data.challengeInvites || [];
-    const relationships = data.relationships || [];
-
-    // Get today's timestamp
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    const todayStart = today.getTime();
-
-    // Calculate metrics
-    const totalUsers = profiles.length;
-    const totalTasks = tasks.length;
-    const totalCompletions = executions.filter((e: any) => e.completed).length;
-    const totalChallenges = challenges.length;
-    const totalFriendships = relationships.filter((r: any) => r.status === 'accepted').length;
-
-    const tasksCreatedToday = tasks.filter((t: any) => t.createdAt >= todayStart).length;
-    const completionsToday = executions.filter(
-      (e: any) => e.completed && e.completedAt && e.completedAt >= todayStart
-    ).length;
-
-    // For active today, we'll use PostHog data if available
-    // For now, approximate as users who completed tasks today
-    const activeUserIds = new Set(
-      executions
-        .filter((e: any) => e.completedAt && e.completedAt >= todayStart)
-        .map((e: any) => e.user?.id)
-        .filter(Boolean)
-    );
-    const activeToday = activeUserIds.size;
-
-    setAnalyticsData({
-      totalUsers,
-      activeToday,
-      totalTasks,
-      totalCompletions,
-      totalChallenges,
-      totalFriendships,
-      tasksCreatedToday,
-      completionsToday,
-      recentActivity: [],
-    });
-
-    setLoading(false);
+    if (data) setLoading(false);
   }, [data]);
 
   // Redirect if not logged in
@@ -110,6 +54,174 @@ export default function AdminDashboard() {
       router.push('/');
     }
   }, [user, router]);
+
+  // Delete a single task with all related data
+  const deleteTask = async (taskId: string) => {
+    if (!data) return;
+
+    const task = (data.tasks as any[]).find((t: any) => t.id === taskId);
+    if (!task) return;
+
+    const transactions: any[] = [];
+    const logs: string[] = [];
+
+    // Delete executions linked to this task
+    const taskExecutions = task.executions || [];
+    for (const execution of taskExecutions) {
+      transactions.push(db.tx.executions[execution.id].delete());
+    }
+    if (taskExecutions.length > 0) {
+      logs.push(`Deleted ${taskExecutions.length} execution(s)`);
+    }
+
+    // Delete comments linked to this task
+    const taskComments = task.comments || [];
+    for (const comment of taskComments) {
+      transactions.push(db.tx.comments[comment.id].delete());
+    }
+    if (taskComments.length > 0) {
+      logs.push(`Deleted ${taskComments.length} comment(s)`);
+    }
+
+    // Delete challenge invites linked to this task
+    const taskChallenges = task.challengeInvites || [];
+    for (const challenge of taskChallenges) {
+      // Also delete linked execution from challenge if it exists
+      if (challenge.execution?.id) {
+        transactions.push(db.tx.executions[challenge.execution.id].delete());
+      }
+      transactions.push(db.tx.challengeInvites[challenge.id].delete());
+    }
+    if (taskChallenges.length > 0) {
+      logs.push(`Deleted ${taskChallenges.length} challenge invite(s)`);
+    }
+
+    // Delete the task itself
+    transactions.push(db.tx.tasks[taskId].delete());
+    logs.push(`Deleted task: "${task.title}"`);
+
+    if (transactions.length > 0) {
+      await db.transact(transactions);
+    }
+
+    return logs;
+  };
+
+  // Delete selected tasks
+  const handleBulkDelete = async () => {
+    setDeleting(true);
+    setDeleteLog([]);
+    const allLogs: string[] = [];
+
+    try {
+      for (const taskId of selectedTasks) {
+        const logs = await deleteTask(taskId);
+        if (logs) allLogs.push(...logs);
+      }
+      allLogs.push(`--- Bulk delete complete: ${selectedTasks.size} task(s) removed ---`);
+      setDeleteLog(allLogs);
+      setSelectedTasks(new Set());
+    } catch (err: any) {
+      allLogs.push(`Error: ${err.message}`);
+      setDeleteLog(allLogs);
+    } finally {
+      setDeleting(false);
+      setShowBulkDeleteConfirm(false);
+    }
+  };
+
+  // Delete ALL tasks
+  const handleDeleteAll = async () => {
+    if (!data) return;
+    setDeleting(true);
+    setDeleteLog([]);
+    const allLogs: string[] = [];
+
+    try {
+      const allTasks = data.tasks as any[];
+      for (const task of allTasks) {
+        const logs = await deleteTask(task.id);
+        if (logs) allLogs.push(...logs);
+      }
+      allLogs.push(`--- Delete all complete: ${allTasks.length} task(s) removed ---`);
+      setDeleteLog(allLogs);
+      setSelectedTasks(new Set());
+    } catch (err: any) {
+      allLogs.push(`Error: ${err.message}`);
+      setDeleteLog(allLogs);
+    } finally {
+      setDeleting(false);
+      setShowDeleteAllConfirm(false);
+    }
+  };
+
+  // Delete a single task with confirmation
+  const handleDeleteSingle = async (taskId: string, title: string) => {
+    if (!confirm(`Delete "${title}" and all its related data?`)) return;
+    setDeleting(true);
+    setDeleteLog([]);
+
+    try {
+      const logs = await deleteTask(taskId);
+      if (logs) setDeleteLog(logs);
+      setSelectedTasks((prev) => {
+        const next = new Set(prev);
+        next.delete(taskId);
+        return next;
+      });
+    } catch (err: any) {
+      setDeleteLog([`Error: ${err.message}`]);
+    } finally {
+      setDeleting(false);
+    }
+  };
+
+  // Toggle task selection
+  const toggleSelect = (taskId: string) => {
+    setSelectedTasks((prev) => {
+      const next = new Set(prev);
+      if (next.has(taskId)) {
+        next.delete(taskId);
+      } else {
+        next.add(taskId);
+      }
+      return next;
+    });
+  };
+
+  // Select/deselect all
+  const toggleSelectAll = () => {
+    if (!data) return;
+    const allTasks = data.tasks as any[];
+    if (selectedTasks.size === allTasks.length) {
+      setSelectedTasks(new Set());
+    } else {
+      setSelectedTasks(new Set(allTasks.map((t: any) => t.id)));
+    }
+  };
+
+  // Calculate analytics
+  const profiles = (data?.profiles || []) as any[];
+  const tasks = (data?.tasks || []) as any[];
+  const executions = (data?.executions || []) as any[];
+  const challenges = (data?.challengeInvites || []) as any[];
+  const relationships = (data?.relationships || []) as any[];
+
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const todayStart = today.getTime();
+
+  const totalCompletions = executions.filter((e: any) => e.completed).length;
+  const totalFriendships = relationships.filter((r: any) => r.status === 'accepted').length;
+  const completionsToday = executions.filter(
+    (e: any) => e.completed && e.completedAt && e.completedAt >= todayStart
+  ).length;
+  const activeUserIds = new Set(
+    executions
+      .filter((e: any) => e.completedAt && e.completedAt >= todayStart)
+      .map((e: any) => e.user?.id)
+      .filter(Boolean)
+  );
 
   if (!user || loading || !isAuthorized) {
     return (
@@ -150,119 +262,235 @@ export default function AdminDashboard() {
       <main className="max-w-7xl mx-auto px-4 py-8">
         {/* KPI Cards */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-          <KPICard
-            title="Total Users"
-            value={analyticsData?.totalUsers || 0}
-            icon="👥"
-            color="purple"
-          />
-          <KPICard
-            title="Active Today"
-            value={analyticsData?.activeToday || 0}
-            icon="⚡"
-            color="blue"
-          />
-          <KPICard
-            title="Tasks Created"
-            value={analyticsData?.totalTasks || 0}
-            icon="📝"
-            color="green"
-          />
-          <KPICard
-            title="Total Completions"
-            value={analyticsData?.totalCompletions || 0}
-            icon="✅"
-            color="orange"
-          />
+          <KPICard title="Total Users" value={profiles.length} icon="👥" color="purple" />
+          <KPICard title="Active Today" value={activeUserIds.size} icon="⚡" color="blue" />
+          <KPICard title="Tasks Created" value={tasks.length} icon="📝" color="green" />
+          <KPICard title="Total Completions" value={totalCompletions} icon="✅" color="orange" />
         </div>
 
-        {/* Secondary KPIs */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-          <KPICard
-            title="Challenges Sent"
-            value={analyticsData?.totalChallenges || 0}
-            icon="🎯"
-            color="pink"
-          />
-          <KPICard
-            title="Friendships"
-            value={analyticsData?.totalFriendships || 0}
-            icon="🤝"
-            color="indigo"
-          />
-          <KPICard
-            title="Completions Today"
-            value={analyticsData?.completionsToday || 0}
-            icon="🔥"
-            color="red"
-          />
+          <KPICard title="Challenges Sent" value={challenges.length} icon="🎯" color="pink" />
+          <KPICard title="Friendships" value={totalFriendships} icon="🤝" color="indigo" />
+          <KPICard title="Completions Today" value={completionsToday} icon="🔥" color="red" />
         </div>
 
         {/* PostHog Integration Info */}
         <div className="bg-white rounded-2xl shadow-lg p-6 mb-8">
           <h2 className="text-xl font-bold text-gray-900 mb-4">📊 PostHog Integration</h2>
-          <div className="space-y-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="bg-green-50 border border-green-200 rounded-xl p-4">
-              <p className="text-green-800 font-semibold">✓ PostHog is now tracking all events!</p>
-              <p className="text-green-700 text-sm mt-2">
-                Visit your PostHog dashboard to see detailed analytics, session replays, and user insights.
-              </p>
+              <p className="text-green-800 font-semibold">✓ PostHog is tracking all events</p>
+              <a
+                href="https://app.posthog.com"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-block mt-3 px-4 py-2 bg-gradient-to-r from-purple-600 to-blue-600 text-white rounded-lg font-semibold hover:shadow-lg transition-all text-sm"
+              >
+                Open PostHog Dashboard →
+              </a>
             </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="bg-gray-50 rounded-xl p-4">
-                <h3 className="font-semibold text-gray-900 mb-2">Events Being Tracked:</h3>
-                <ul className="text-sm text-gray-700 space-y-1">
-                  <li>• User sign-ups & sign-ins</li>
-                  <li>• Task creation, execution & completion</li>
-                  <li>• Friend requests & acceptances</li>
-                  <li>• Challenge invites & responses</li>
-                  <li>• Tab navigation & page views</li>
-                  <li>• Session activity</li>
-                </ul>
-              </div>
-
-              <div className="bg-gray-50 rounded-xl p-4">
-                <h3 className="font-semibold text-gray-900 mb-2">View Your Analytics:</h3>
-                <a
-                  href="https://app.posthog.com"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="inline-block mt-2 px-4 py-2 bg-gradient-to-r from-purple-600 to-blue-600 text-white rounded-lg font-semibold hover:shadow-lg transition-all"
-                >
-                  Open PostHog Dashboard →
-                </a>
-                <p className="text-xs text-gray-600 mt-3">
-                  Your PostHog project will show:
-                  <br />- Real-time event stream
-                  <br />- User behavior funnels
-                  <br />- Retention cohorts
-                  <br />- Session replays
-                </p>
-              </div>
+            <div className="bg-gray-50 rounded-xl p-4">
+              <h3 className="font-semibold text-gray-900 mb-2 text-sm">Tracking:</h3>
+              <p className="text-xs text-gray-600">
+                Sign-ins, tasks, executions, completions, friends, challenges, tab views, sessions
+              </p>
             </div>
           </div>
         </div>
 
-        {/* Top Tasks */}
+        {/* Task Management Section */}
         <div className="bg-white rounded-2xl shadow-lg p-6 mb-8">
-          <h2 className="text-xl font-bold text-gray-900 mb-4">🏆 Top Tasks by Completions</h2>
-          <TopTasksTable tasks={data?.tasks || []} />
+          <div className="flex items-center justify-between mb-6">
+            <h2 className="text-xl font-bold text-gray-900">🗂 Task Management</h2>
+            <div className="flex items-center gap-3">
+              {selectedTasks.size > 0 && (
+                <button
+                  onClick={() => setShowBulkDeleteConfirm(true)}
+                  disabled={deleting}
+                  className="px-4 py-2 bg-red-500 text-white rounded-xl font-semibold hover:bg-red-600 transition-all disabled:opacity-50 text-sm"
+                >
+                  Delete Selected ({selectedTasks.size})
+                </button>
+              )}
+              <button
+                onClick={() => setShowDeleteAllConfirm(true)}
+                disabled={deleting || tasks.length === 0}
+                className="px-4 py-2 bg-red-600 text-white rounded-xl font-semibold hover:bg-red-700 transition-all disabled:opacity-50 text-sm"
+              >
+                Delete All Tasks ({tasks.length})
+              </button>
+            </div>
+          </div>
+
+          {/* Delete Log */}
+          {deleteLog.length > 0 && (
+            <div className="bg-gray-900 text-green-400 rounded-xl p-4 mb-6 font-mono text-xs max-h-40 overflow-y-auto">
+              {deleteLog.map((log, i) => (
+                <div key={i}>{log}</div>
+              ))}
+            </div>
+          )}
+
+          {/* Task Table */}
+          {tasks.length === 0 ? (
+            <p className="text-gray-500 text-center py-8">No tasks in database</p>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full">
+                <thead>
+                  <tr className="border-b border-gray-200">
+                    <th className="py-3 px-3 text-left w-10">
+                      <input
+                        type="checkbox"
+                        checked={selectedTasks.size === tasks.length && tasks.length > 0}
+                        onChange={toggleSelectAll}
+                        className="w-4 h-4 rounded border-gray-300 text-purple-600 focus:ring-purple-500"
+                      />
+                    </th>
+                    <th className="text-left py-3 px-3 font-semibold text-gray-700 text-sm">Task</th>
+                    <th className="text-left py-3 px-3 font-semibold text-gray-700 text-sm">Creator</th>
+                    <th className="text-right py-3 px-3 font-semibold text-gray-700 text-sm">Executions</th>
+                    <th className="text-right py-3 px-3 font-semibold text-gray-700 text-sm">Comments</th>
+                    <th className="text-right py-3 px-3 font-semibold text-gray-700 text-sm">Challenges</th>
+                    <th className="text-right py-3 px-3 font-semibold text-gray-700 text-sm">Created</th>
+                    <th className="text-right py-3 px-3 font-semibold text-gray-700 text-sm w-20">Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {[...tasks]
+                    .sort((a: any, b: any) => b.createdAt - a.createdAt)
+                    .map((task: any) => (
+                      <tr
+                        key={task.id}
+                        className={`border-b border-gray-100 hover:bg-gray-50 ${
+                          selectedTasks.has(task.id) ? 'bg-purple-50' : ''
+                        }`}
+                      >
+                        <td className="py-3 px-3">
+                          <input
+                            type="checkbox"
+                            checked={selectedTasks.has(task.id)}
+                            onChange={() => toggleSelect(task.id)}
+                            className="w-4 h-4 rounded border-gray-300 text-purple-600 focus:ring-purple-500"
+                          />
+                        </td>
+                        <td className="py-3 px-3">
+                          <p className="font-semibold text-gray-900 text-sm">{task.title}</p>
+                          <p className="text-xs text-gray-500 truncate max-w-xs">{task.description}</p>
+                        </td>
+                        <td className="py-3 px-3 text-gray-600 text-sm">
+                          {task.creator?.name || 'Unknown'}
+                        </td>
+                        <td className="py-3 px-3 text-right text-sm text-gray-600">
+                          {task.executions?.length || 0}
+                        </td>
+                        <td className="py-3 px-3 text-right text-sm text-gray-600">
+                          {task.comments?.length || 0}
+                        </td>
+                        <td className="py-3 px-3 text-right text-sm text-gray-600">
+                          {task.challengeInvites?.length || 0}
+                        </td>
+                        <td className="py-3 px-3 text-right text-sm text-gray-600">
+                          {new Date(task.createdAt).toLocaleDateString()}
+                        </td>
+                        <td className="py-3 px-3 text-right">
+                          <button
+                            onClick={() => handleDeleteSingle(task.id, task.title)}
+                            disabled={deleting}
+                            className="text-red-500 hover:text-red-700 hover:bg-red-50 px-2 py-1 rounded-lg transition-all disabled:opacity-50 text-sm font-medium"
+                          >
+                            Delete
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                </tbody>
+              </table>
+            </div>
+          )}
         </div>
 
-        {/* Recent Tasks */}
-        <div className="bg-white rounded-2xl shadow-lg p-6">
-          <h2 className="text-xl font-bold text-gray-900 mb-4">🆕 Recently Created Tasks</h2>
-          <RecentTasksTable tasks={data?.tasks || []} />
+        {/* Top Tasks by Completions */}
+        <div className="bg-white rounded-2xl shadow-lg p-6 mb-8">
+          <h2 className="text-xl font-bold text-gray-900 mb-4">🏆 Top Tasks by Completions</h2>
+          <TopTasksTable tasks={tasks} />
         </div>
       </main>
+
+      {/* Delete All Confirmation Modal */}
+      {showDeleteAllConfirm && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 px-4">
+          <div className="bg-white rounded-2xl shadow-xl p-6 max-w-md w-full">
+            <h3 className="text-xl font-bold text-red-600 mb-3">Delete All Tasks?</h3>
+            <p className="text-gray-700 mb-2">
+              This will permanently delete:
+            </p>
+            <ul className="text-gray-600 text-sm space-y-1 mb-4">
+              <li>• <strong>{tasks.length}</strong> task(s)</li>
+              <li>• All associated executions</li>
+              <li>• All associated comments</li>
+              <li>• All associated challenge invites</li>
+            </ul>
+            <p className="text-red-600 text-sm font-semibold mb-6">
+              This action cannot be undone.
+            </p>
+            <div className="flex gap-3">
+              <button
+                onClick={() => setShowDeleteAllConfirm(false)}
+                disabled={deleting}
+                className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-xl font-semibold hover:bg-gray-50 transition-all"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleDeleteAll}
+                disabled={deleting}
+                className="flex-1 px-4 py-2 bg-red-600 text-white rounded-xl font-semibold hover:bg-red-700 transition-all disabled:opacity-50"
+              >
+                {deleting ? 'Deleting...' : 'Yes, Delete All'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Bulk Delete Confirmation Modal */}
+      {showBulkDeleteConfirm && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 px-4">
+          <div className="bg-white rounded-2xl shadow-xl p-6 max-w-md w-full">
+            <h3 className="text-xl font-bold text-red-600 mb-3">Delete {selectedTasks.size} Task(s)?</h3>
+            <p className="text-gray-700 mb-2">
+              This will permanently delete the selected tasks and all their associated data (executions, comments, challenge invites).
+            </p>
+            <p className="text-red-600 text-sm font-semibold mb-6">
+              This action cannot be undone.
+            </p>
+            <div className="flex gap-3">
+              <button
+                onClick={() => setShowBulkDeleteConfirm(false)}
+                disabled={deleting}
+                className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-xl font-semibold hover:bg-gray-50 transition-all"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleBulkDelete}
+                disabled={deleting}
+                className="flex-1 px-4 py-2 bg-red-600 text-white rounded-xl font-semibold hover:bg-red-700 transition-all disabled:opacity-50"
+              >
+                {deleting ? 'Deleting...' : `Delete ${selectedTasks.size} Task(s)`}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
 
 // KPI Card Component
 function KPICard({ title, value, icon, color }: { title: string; value: number; icon: string; color: string }) {
-  const colorClasses = {
+  const colorClasses: Record<string, string> = {
     purple: 'from-purple-500 to-purple-600',
     blue: 'from-blue-500 to-blue-600',
     green: 'from-green-500 to-green-600',
@@ -270,13 +498,13 @@ function KPICard({ title, value, icon, color }: { title: string; value: number; 
     pink: 'from-pink-500 to-pink-600',
     indigo: 'from-indigo-500 to-indigo-600',
     red: 'from-red-500 to-red-600',
-  }[color];
+  };
 
   return (
     <div className="bg-white rounded-2xl shadow-lg p-6 hover:shadow-xl transition-shadow">
       <div className="flex items-center justify-between mb-2">
         <span className="text-3xl">{icon}</span>
-        <div className={`text-3xl font-black bg-gradient-to-r ${colorClasses} bg-clip-text text-transparent`}>
+        <div className={`text-3xl font-black bg-gradient-to-r ${colorClasses[color]} bg-clip-text text-transparent`}>
           {value.toLocaleString()}
         </div>
       </div>
@@ -304,73 +532,25 @@ function TopTasksTable({ tasks }: { tasks: any[] }) {
       <table className="w-full">
         <thead>
           <tr className="border-b border-gray-200">
-            <th className="text-left py-3 px-4 font-semibold text-gray-700">Task</th>
-            <th className="text-right py-3 px-4 font-semibold text-gray-700">Completions</th>
-            <th className="text-right py-3 px-4 font-semibold text-gray-700">Executions</th>
+            <th className="text-left py-3 px-4 font-semibold text-gray-700 text-sm">#</th>
+            <th className="text-left py-3 px-4 font-semibold text-gray-700 text-sm">Task</th>
+            <th className="text-right py-3 px-4 font-semibold text-gray-700 text-sm">Completions</th>
+            <th className="text-right py-3 px-4 font-semibold text-gray-700 text-sm">Executions</th>
           </tr>
         </thead>
         <tbody>
           {sortedTasks.map((task, index) => (
             <tr key={task.id} className="border-b border-gray-100 hover:bg-gray-50">
+              <td className="py-3 px-4 text-gray-400 font-semibold text-sm">{index + 1}</td>
               <td className="py-3 px-4">
-                <div className="flex items-center gap-3">
-                  <span className="text-gray-400 font-semibold">{index + 1}</span>
-                  <div>
-                    <p className="font-semibold text-gray-900">{task.title}</p>
-                    <p className="text-sm text-gray-500 truncate max-w-md">
-                      {task.description}
-                    </p>
-                  </div>
-                </div>
+                <p className="font-semibold text-gray-900 text-sm">{task.title}</p>
+                <p className="text-xs text-gray-500 truncate max-w-md">{task.description}</p>
               </td>
-              <td className="py-3 px-4 text-right font-semibold text-purple-600">
+              <td className="py-3 px-4 text-right font-semibold text-purple-600 text-sm">
                 {task.completionCount}
               </td>
-              <td className="py-3 px-4 text-right text-gray-600">
-                {task.executions?.length || 0}
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
-    </div>
-  );
-}
-
-// Recent Tasks Table
-function RecentTasksTable({ tasks }: { tasks: any[] }) {
-  const recentTasks = [...tasks]
-    .sort((a, b) => b.createdAt - a.createdAt)
-    .slice(0, 10);
-
-  if (recentTasks.length === 0) {
-    return <p className="text-gray-500 text-center py-8">No tasks yet</p>;
-  }
-
-  return (
-    <div className="overflow-x-auto">
-      <table className="w-full">
-        <thead>
-          <tr className="border-b border-gray-200">
-            <th className="text-left py-3 px-4 font-semibold text-gray-700">Task</th>
-            <th className="text-left py-3 px-4 font-semibold text-gray-700">Creator</th>
-            <th className="text-right py-3 px-4 font-semibold text-gray-700">Created</th>
-          </tr>
-        </thead>
-        <tbody>
-          {recentTasks.map((task) => (
-            <tr key={task.id} className="border-b border-gray-100 hover:bg-gray-50">
-              <td className="py-3 px-4">
-                <p className="font-semibold text-gray-900">{task.title}</p>
-                <p className="text-sm text-gray-500 truncate max-w-md">
-                  {task.description}
-                </p>
-              </td>
-              <td className="py-3 px-4 text-gray-600">
-                {task.creator?.name || 'Unknown'}
-              </td>
               <td className="py-3 px-4 text-right text-gray-600 text-sm">
-                {new Date(task.createdAt).toLocaleDateString()}
+                {task.executions?.length || 0}
               </td>
             </tr>
           ))}
