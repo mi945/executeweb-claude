@@ -69,6 +69,16 @@ export default function TaskDetailModal({ task, isOpen, onClose, activeUsers = [
   const completers = task.executions?.filter(e => e.completed) || [];
   const linkDomain = task.externalLink ? new URL(task.externalLink).hostname.replace('www.', '') : null;
 
+  // Get valid proof images (not expired, has image)
+  const validProofs = (task.executions || [])
+    .filter((e) => {
+      if (!e.completed || !e.proofImageUrl) return false;
+      // Check if proof has expired (7 days)
+      if (e.proofExpiresAt && Date.now() > e.proofExpiresAt) return false;
+      return true;
+    })
+    .sort((a, b) => (b.proofUploadedAt || 0) - (a.proofUploadedAt || 0));
+
   return (
     <AnimatePresence>
       {isOpen && (
