@@ -50,6 +50,8 @@ export default function TaskFeed() {
   const [isPublishing, setIsPublishing] = useState(false);
   const [expandedCards, setExpandedCards] = useState<Set<string>>(new Set());
   const [executingTaskId, setExecutingTaskId] = useState<string | null>(null);
+  const [completingExecutionId, setCompletingExecutionId] = useState<string | null>(null);
+  const [celebratingTaskId, setCelebratingTaskId] = useState<string | null>(null);
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [showEventDetails, setShowEventDetails] = useState(false);
@@ -263,6 +265,56 @@ export default function TaskFeed() {
       alert('Error executing task: ' + err.message);
     } finally {
       setExecutingTaskId(null);
+    }
+  };
+
+  const handleComplete = async (executionId: string) => {
+    setCompletingExecutionId(executionId);
+
+    // Find the task for this execution to show celebration
+    const task = tasks.find(t => t.executions?.some(e => e.id === executionId));
+
+    try {
+      // Update execution to completed
+      await db.transact([
+        db.tx.executions[executionId].update({
+          completed: true,
+          completedAt: Date.now(),
+        }),
+      ]);
+
+      // Trigger celebration animation
+      if (task) {
+        setCelebratingTaskId(task.id);
+        setTimeout(() => setCelebratingTaskId(null), 3000);
+      }
+
+      // Update user streak (simplified logic)
+      if (userProfile) {
+        const today = new Date().setHours(0, 0, 0, 0);
+        const lastCompletion = userProfile.lastCompletionDate
+          ? new Date(userProfile.lastCompletionDate).setHours(0, 0, 0, 0)
+          : 0;
+        const daysSince = Math.floor((today - lastCompletion) / (1000 * 60 * 60 * 24));
+
+        let newStreak = userProfile.dailyStreak || 0;
+        if (daysSince === 1) {
+          newStreak += 1;
+        } else if (daysSince > 1) {
+          newStreak = 1;
+        }
+
+        await db.transact([
+          db.tx.profiles[userProfile.id].update({
+            dailyStreak: newStreak,
+            lastCompletionDate: Date.now(),
+          }),
+        ]);
+      }
+    } catch (err: any) {
+      alert('Error completing task: ' + err.message);
+    } finally {
+      setCompletingExecutionId(null);
     }
   };
 
@@ -660,17 +712,27 @@ export default function TaskFeed() {
       {/* Task Cards - Single Column Layout */}
       <motion.div layout className="flex flex-col gap-4 max-w-xl mx-auto">
         <AnimatePresence>
-          {tasks.map((task) => (
-            <ActionCard
-              key={task.id}
-              task={task}
-              userProfile={userProfile || null}
-              currentUserId={user?.id}
-              onExecute={handleExecute}
-              isExecuting={executingTaskId === task.id}
-              onClick={handleCardClick}
-            />
-          ))}
+          {tasks.map((task) => {
+            // Find if this task has an execution being completed
+            const userExecution = task.executions?.find(e => e.user?.id === user?.id);
+            const isCompleting = userExecution?.id === completingExecutionId;
+            const showCelebration = task.id === celebratingTaskId;
+
+            return (
+              <ActionCard
+                key={task.id}
+                task={task}
+                userProfile={userProfile || null}
+                currentUserId={user?.id}
+                onExecute={handleExecute}
+                onComplete={handleComplete}
+                isExecuting={executingTaskId === task.id}
+                isCompleting={isCompleting}
+                showCelebration={showCelebration}
+                onClick={handleCardClick}
+              />
+            );
+          })}
         </AnimatePresence>
       </motion.div>
 
