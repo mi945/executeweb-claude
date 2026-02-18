@@ -26,9 +26,12 @@ interface Task {
   };
   executions?: Array<{
     id: string;
-    user: { id: string; name?: string; profileImage?: string };
+    user: { id: string; name?: string; profileImage?: string; avatarColor?: string };
     completed: boolean;
     completedAt?: number;
+    proofImageUrl?: string;
+    proofUploadedAt?: number;
+    proofExpiresAt?: number;
   }>;
 }
 
@@ -63,6 +66,8 @@ export default function ActionCard({
 }: ActionCardProps) {
   const [expanded, setExpanded] = useState(false);
   const [showComments, setShowComments] = useState(false);
+  const [showProofs, setShowProofs] = useState(false);
+  const [selectedProof, setSelectedProof] = useState<string | null>(null);
 
   // Query comments for this task
   const { data: commentsData } = db.useQuery({
@@ -97,6 +102,18 @@ export default function ActionCard({
     .filter((e) => e.completed && e.user)
     .sort((a, b) => (b.completedAt || 0) - (a.completedAt || 0))
     .slice(0, 5);
+
+  // Get valid proof images (not expired, has image)
+  const validProofs = (task.executions || [])
+    .filter((e) => {
+      if (!e.completed || !e.proofImageUrl) return false;
+      // Check if proof has expired (7 days)
+      if (e.proofExpiresAt && Date.now() > e.proofExpiresAt) return false;
+      return true;
+    })
+    .sort((a, b) => (b.proofUploadedAt || 0) - (a.proofUploadedAt || 0));
+
+  const proofCount = validProofs.length;
 
   // Extract domain from URL
   const getDomain = (url: string) => {
