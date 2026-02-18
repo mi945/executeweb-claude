@@ -1,8 +1,8 @@
 import posthog from 'posthog-js';
 
-// Initialize PostHog
-if (typeof window !== 'undefined') {
-  posthog.init(process.env.NEXT_PUBLIC_POSTHOG_KEY!, {
+// Initialize PostHog only if token is provided
+if (typeof window !== 'undefined' && process.env.NEXT_PUBLIC_POSTHOG_KEY) {
+  posthog.init(process.env.NEXT_PUBLIC_POSTHOG_KEY, {
     api_host: process.env.NEXT_PUBLIC_POSTHOG_HOST || 'https://us.i.posthog.com',
     autocapture: false, // Manual tracking for better control
     capture_pageview: false, // We'll track pageviews manually
@@ -66,6 +66,8 @@ export function trackEvent(
     console.log(`[analytics] ${event}`, properties ?? '');
   }
 
+  if (!process.env.NEXT_PUBLIC_POSTHOG_KEY) return;
+
   posthog.capture(event, properties);
 }
 
@@ -81,6 +83,7 @@ export function identifyUser(
   }
 ) {
   if (typeof window === 'undefined') return;
+  if (!process.env.NEXT_PUBLIC_POSTHOG_KEY) return;
 
   posthog.identify(userId, traits);
 }
@@ -88,6 +91,7 @@ export function identifyUser(
 // Set user properties (for updating existing users)
 export function setUserProperties(properties: Record<string, any>) {
   if (typeof window === 'undefined') return;
+  if (!process.env.NEXT_PUBLIC_POSTHOG_KEY) return;
 
   posthog.people.set(properties);
 }
@@ -95,6 +99,7 @@ export function setUserProperties(properties: Record<string, any>) {
 // Track page views
 export function trackPageView(pageName: string, properties?: Record<string, any>) {
   if (typeof window === 'undefined') return;
+  if (!process.env.NEXT_PUBLIC_POSTHOG_KEY) return;
 
   posthog.capture('$pageview', {
     $current_url: window.location.href,
@@ -106,6 +111,7 @@ export function trackPageView(pageName: string, properties?: Record<string, any>
 // Start session tracking
 export function startSession() {
   if (typeof window === 'undefined') return;
+  if (!process.env.NEXT_PUBLIC_POSTHOG_KEY) return;
 
   posthog.capture('session_started', {
     referrer: document.referrer,
@@ -116,6 +122,7 @@ export function startSession() {
 // Reset on logout
 export function resetAnalytics() {
   if (typeof window === 'undefined') return;
+  if (!process.env.NEXT_PUBLIC_POSTHOG_KEY) return;
 
   posthog.reset();
 }
