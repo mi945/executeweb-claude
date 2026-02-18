@@ -105,6 +105,14 @@ export default function TaskFeed() {
     (p: any) => p.id === user?.id
   );
 
+  // Challenge invites hook
+  const {
+    sendChallenge,
+    hasPendingInvite,
+    markChallengeCompleted,
+    friends,
+  } = useChallengeInvites();
+
   // Check if user has executed a task
   const hasExecuted = (task: Task) => {
     return task.executions?.some((e) => e.user?.id === user?.id);
