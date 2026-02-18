@@ -9,6 +9,7 @@ import TaskDetailModal from './TaskDetailModal';
 import ChallengeFriendModal from './ChallengeFriendModal';
 import { useTaskPresence } from '@/hooks/useTaskPresence';
 import { useChallengeInvites } from '@/hooks/useChallengeInvites';
+import { trackEvent } from '@/lib/analytics';
 
 interface Task {
   id: string;
@@ -225,6 +226,16 @@ export default function TaskFeed() {
 
       await db.transact(transactions);
 
+      // Track task creation
+      trackEvent('task_created', {
+        taskId,
+        hasImage: !!newTask.imageUrl.trim(),
+        hasLink: !!newTask.externalLink.trim(),
+        hasEventDetails: !!(newTask.eventDate || newTask.eventTime || newTask.eventLocation),
+        titleLength: newTask.title.trim().length,
+        descriptionLength: newTask.description.trim().length,
+      });
+
       // Reset form
       setNewTask({ title: '', description: '', imageUrl: '', externalLink: '', eventDate: '', eventTime: '', eventLocation: '' });
       setImagePreview('');
@@ -273,6 +284,12 @@ export default function TaskFeed() {
       }
 
       await db.transact(transactions);
+
+      // Track task execution
+      trackEvent('task_executed', {
+        taskId,
+        executionId,
+      });
     } catch (err: any) {
       alert('Error executing task: ' + err.message);
     } finally {
@@ -294,6 +311,12 @@ export default function TaskFeed() {
           completedAt: Date.now(),
         }),
       ]);
+
+      // Track task completion
+      trackEvent('task_completed', {
+        taskId: task?.id,
+        executionId,
+      });
 
       // Trigger celebration animation
       if (task) {
