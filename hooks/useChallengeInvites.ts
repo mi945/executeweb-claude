@@ -4,6 +4,7 @@ import { useCallback, useMemo, useRef } from 'react';
 import db from '@/lib/db';
 import { id } from '@instantdb/react';
 import { useFriendship } from './useFriendship';
+import { trackEvent } from '@/lib/analytics';
 
 export type ChallengeStatus = 'pending' | 'accepted' | 'declined' | 'completed';
 
@@ -136,6 +137,14 @@ export function useChallengeInvites() {
           db.tx.challengeInvites[inviteId].link({ task: taskId }),
         ]);
 
+        // Track challenge sent
+        trackEvent('challenge_sent', {
+          inviteId,
+          taskId,
+          toUserId,
+          hasMessage: !!message?.trim(),
+        });
+
         return { success: true };
       } catch (err: any) {
         return { success: false, error: err.message };
@@ -187,6 +196,14 @@ export function useChallengeInvites() {
           db.tx.challengeInvites[inviteId].link({ execution: executionId }),
         ]);
 
+        // Track challenge accepted
+        trackEvent('challenge_accepted', {
+          inviteId,
+          taskId,
+          executionId,
+          fromUserId: invite.fromUser?.id,
+        });
+
         return { success: true };
       } catch (err: any) {
         return { success: false, error: err.message };
@@ -217,6 +234,14 @@ export function useChallengeInvites() {
             respondedAt: Date.now(),
           }),
         ]);
+
+        // Track challenge declined
+        trackEvent('challenge_declined', {
+          inviteId,
+          taskId: invite.task?.id,
+          fromUserId: invite.fromUser?.id,
+        });
+
         return { success: true };
       } catch (err: any) {
         return { success: false, error: err.message };
