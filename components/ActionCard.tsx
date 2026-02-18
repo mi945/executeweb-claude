@@ -355,10 +355,23 @@ export default function ActionCard({
 
       {/* Social Layer (Collapsed by default) */}
       <div className="border-t border-gray-100 bg-gray-50/50">
-        <button
-          onClick={() => setShowComments(!showComments)}
-          className="w-full flex items-center justify-center gap-1.5 py-2 text-xs text-gray-500 hover:text-purple-600 hover:bg-gray-100/50 transition-colors"
-        >
+        <div className="flex items-center divide-x divide-gray-200">
+          {/* Challenge a Friend Button */}
+          <button
+            onClick={() => onChallengeFriend?.(task)}
+            className="flex-1 flex items-center justify-center gap-1.5 py-2 text-xs text-gray-500 hover:text-purple-600 hover:bg-gray-100/50 transition-colors"
+          >
+            <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9a2.25 2.25 0 11-4.5 0 2.25 2.25 0 014.5 0zM12.75 12a2.25 2.25 0 11-4.5 0 2.25 2.25 0 014.5 0z" />
+            </svg>
+            <span>Challenge</span>
+          </button>
+
+          {/* Comments Button */}
+          <button
+            onClick={() => setShowComments(!showComments)}
+            className="flex-1 flex items-center justify-center gap-1.5 py-2 text-xs text-gray-500 hover:text-purple-600 hover:bg-gray-100/50 transition-colors"
+          >
           <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path
               strokeLinecap="round"
@@ -370,7 +383,8 @@ export default function ActionCard({
           <span>
             {showComments ? 'Hide' : commentCount > 0 ? `${commentCount} ${commentCount === 1 ? 'comment' : 'comments'}` : 'Comments'}
           </span>
-        </button>
+          </button>
+        </div>
 
         {showComments && (
           <div className="px-4 pb-3 border-t border-gray-100">
