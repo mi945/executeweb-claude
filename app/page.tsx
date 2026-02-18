@@ -14,6 +14,9 @@ import { useFriendship } from '@/hooks/useFriendship';
 import { useChallengeInvites } from '@/hooks/useChallengeInvites';
 import { identifyUser, trackEvent, startSession, trackPageView } from '@/lib/analytics';
 
+// Admin email whitelist
+const ADMIN_EMAILS = ['michaelkgaba@gmail.com'];
+
 export default function Home() {
   const router = useRouter();
   const [activeTab, setActiveTab] = useState<'discover' | 'actions' | 'pulse' | 'friends'>(
@@ -27,6 +30,9 @@ export default function Home() {
 
   // Get current user
   const { user } = db.useAuth();
+
+  // Check if user is admin
+  const isAdmin = user?.email && ADMIN_EMAILS.includes(user.email);
 
   // Query all executions to calculate today's completions
   const { data } = db.useQuery({
