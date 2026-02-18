@@ -83,16 +83,16 @@ export default function TaskDetailModal({ task, isOpen, onClose, activeUsers = [
               exit={{ opacity: 0, scale: 0.95, y: 20 }}
               transition={{ type: 'spring', duration: 0.3 }}
               onClick={(e) => e.stopPropagation()}
-              className="bg-white rounded-2xl shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-y-auto"
+              className="relative bg-white rounded-2xl shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-y-auto"
             >
-              {/* Close Button */}
+              {/* Close Button - Sticky so it stays visible when scrolling */}
               <button
                 onClick={onClose}
-                className="absolute top-6 right-6 p-2 rounded-full hover:bg-gray-100 transition-colors z-10"
+                className="sticky top-4 float-right mr-4 mt-4 p-3 rounded-full bg-white shadow-lg border-2 border-gray-200 hover:border-gray-300 hover:bg-gray-50 hover:scale-110 transition-all z-50"
                 aria-label="Close modal"
               >
-                <svg className="w-6 h-6 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                <svg className="w-6 h-6 text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M6 18L18 6M6 6l12 12" />
                 </svg>
               </button>
 
