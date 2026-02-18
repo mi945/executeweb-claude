@@ -11,6 +11,7 @@ import UserProfile from '@/components/UserProfile';
 import NudgeNotifications from '@/components/NudgeNotifications';
 import FriendsList from '@/components/FriendsList';
 import { useFriendship } from '@/hooks/useFriendship';
+import { useChallengeInvites } from '@/hooks/useChallengeInvites';
 
 export default function Home() {
   const router = useRouter();
@@ -19,7 +20,9 @@ export default function Home() {
   );
   const [todayCompletions, setTodayCompletions] = useState<number>(0);
   const { incomingRequests } = useFriendship();
+  const { incomingChallenges } = useChallengeInvites();
   const pendingCount = incomingRequests.length;
+  const challengeCount = incomingChallenges.length;
 
   // Query all executions to calculate today's completions
   const { data } = db.useQuery({
@@ -75,13 +78,18 @@ export default function Home() {
                     </button>
                     <button
                       onClick={() => setActiveTab('actions')}
-                      className={`px-4 py-2 rounded-xl font-semibold transition-all ${
+                      className={`relative px-4 py-2 rounded-xl font-semibold transition-all ${
                         activeTab === 'actions'
                           ? 'bg-gradient-to-r from-purple-600 to-blue-600 text-white shadow-lg'
                           : 'text-gray-600 hover:bg-gray-100'
                       }`}
                     >
                       My Actions
+                      {challengeCount > 0 && (
+                        <span className="absolute -top-1 -right-1 bg-purple-500 text-white text-xs font-bold rounded-full w-5 h-5 flex items-center justify-center">
+                          {challengeCount}
+                        </span>
+                      )}
                     </button>
                     <button
                       onClick={() => setActiveTab('pulse')}
@@ -184,13 +192,18 @@ export default function Home() {
 
               <button
                 onClick={() => setActiveTab('actions')}
-                className={`flex flex-col items-center justify-center flex-1 h-full transition-colors ${
+                className={`relative flex flex-col items-center justify-center flex-1 h-full transition-colors ${
                   activeTab === 'actions' ? 'text-purple-600' : 'text-gray-500'
                 }`}
               >
                 <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" />
                 </svg>
+                {challengeCount > 0 && (
+                  <span className="absolute top-1 right-1/4 bg-purple-500 text-white text-xs font-bold rounded-full w-4 h-4 flex items-center justify-center">
+                    {challengeCount}
+                  </span>
+                )}
                 <span className="text-xs mt-1 font-medium">Actions</span>
               </button>
 
