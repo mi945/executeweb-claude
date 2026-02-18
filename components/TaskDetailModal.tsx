@@ -27,7 +27,12 @@ interface Task {
       id: string;
       name?: string;
       profileImage?: string | null;
+      avatarColor?: string | null;
     };
+    completedAt?: number;
+    proofImageUrl?: string | null;
+    proofUploadedAt?: number;
+    proofExpiresAt?: number;
   }>;
 }
 
@@ -39,6 +44,8 @@ interface TaskDetailModalProps {
 }
 
 export default function TaskDetailModal({ task, isOpen, onClose, activeUsers = [] }: TaskDetailModalProps) {
+  const [selectedProof, setSelectedProof] = useState<string | null>(null);
+
   // Close modal on ESC key
   useEffect(() => {
     const handleEsc = (e: KeyboardEvent) => {
