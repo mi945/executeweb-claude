@@ -261,10 +261,107 @@ export default function TaskDetailModal({ task, isOpen, onClose, activeUsers = [
                       </div>
                     </div>
                   )}
+
+                  {/* Proof Gallery */}
+                  {validProofs.length > 0 && (
+                    <div>
+                      <h3 className="text-sm font-semibold text-gray-700 mb-3 flex items-center gap-2">
+                        <svg className="w-4 h-4 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                        Proof Gallery ({validProofs.length})
+                      </h3>
+                      <div className="grid grid-cols-3 gap-3">
+                        {validProofs.map((execution) => (
+                          <motion.div
+                            key={execution.id}
+                            initial={{ opacity: 0, scale: 0.9 }}
+                            animate={{ opacity: 1, scale: 1 }}
+                            className="relative group cursor-pointer rounded-lg overflow-hidden border-2 border-gray-200 hover:border-green-400 transition-all"
+                            onClick={() => setSelectedProof(execution.proofImageUrl || null)}
+                          >
+                            {/* Proof Image */}
+                            <img
+                              src={execution.proofImageUrl || ''}
+                              alt="Proof of completion"
+                              className="w-full h-32 object-cover group-hover:scale-105 transition-transform duration-300"
+                            />
+
+                            {/* Overlay with user info */}
+                            <div className="absolute inset-0 bg-gradient-to-t from-black/70 to-transparent opacity-0 group-hover:opacity-100 transition-opacity">
+                              <div className="absolute bottom-2 left-2 right-2">
+                                <div className="flex items-center gap-2">
+                                  {execution.user.profileImage ? (
+                                    <img
+                                      src={execution.user.profileImage}
+                                      alt={execution.user.name || 'User'}
+                                      className="w-6 h-6 rounded-full border border-white"
+                                    />
+                                  ) : (
+                                    <div className={`w-6 h-6 rounded-full bg-gradient-to-br ${execution.user.avatarColor || 'from-green-400 to-emerald-400'} flex items-center justify-center text-white text-xs font-bold border border-white`}>
+                                      {(execution.user.name || 'A')[0].toUpperCase()}
+                                    </div>
+                                  )}
+                                  <span className="text-white text-xs font-medium truncate">
+                                    {execution.user.name || 'Anonymous'}
+                                  </span>
+                                </div>
+                              </div>
+                            </div>
+
+                            {/* Timestamp Badge */}
+                            <div className="absolute top-2 right-2 px-2 py-1 bg-black/60 backdrop-blur-sm rounded text-xs text-white font-medium">
+                              {execution.proofUploadedAt && new Date(execution.proofUploadedAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                            </div>
+
+                            {/* Expiration indicator */}
+                            {execution.proofExpiresAt && (
+                              <div className="absolute bottom-2 right-2 px-2 py-0.5 bg-amber-500/90 backdrop-blur-sm rounded text-xs text-white font-medium">
+                                {Math.ceil((execution.proofExpiresAt - Date.now()) / (1000 * 60 * 60 * 24))}d left
+                              </div>
+                            )}
+                          </motion.div>
+                        ))}
+                      </div>
+                      <p className="text-xs text-gray-400 mt-2">
+                        Proofs are visible for 7 days after submission
+                      </p>
+                    </div>
+                  )}
                 </div>
               </div>
             </motion.div>
           </div>
+
+          {/* Proof Lightbox */}
+          {selectedProof && (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setSelectedProof(null)}
+              className="fixed inset-0 bg-black/90 backdrop-blur-sm z-[60] flex items-center justify-center p-4"
+            >
+              <motion.img
+                initial={{ opacity: 0, scale: 0.9 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 0.9 }}
+                src={selectedProof}
+                alt="Proof full size"
+                className="max-w-full max-h-[90vh] object-contain rounded-lg shadow-2xl"
+                onClick={(e) => e.stopPropagation()}
+              />
+              <button
+                onClick={() => setSelectedProof(null)}
+                className="absolute top-4 right-4 p-3 bg-white rounded-full hover:bg-gray-100 transition-colors shadow-lg"
+                aria-label="Close"
+              >
+                <svg className="w-6 h-6 text-gray-900" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </motion.div>
+          )}
         </>
       )}
     </AnimatePresence>
