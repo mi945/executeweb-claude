@@ -7,6 +7,7 @@ import { id } from '@instantdb/react';
 import ActionCard from './ActionCard';
 import TaskDetailModal from './TaskDetailModal';
 import ChallengeFriendModal from './ChallengeFriendModal';
+import ProofUploadModal from './ProofUploadModal';
 import { useTaskPresence } from '@/hooks/useTaskPresence';
 import { useChallengeInvites } from '@/hooks/useChallengeInvites';
 import { trackEvent } from '@/lib/analytics';
@@ -60,6 +61,9 @@ export default function TaskFeed() {
   const [showEventDetails, setShowEventDetails] = useState(false);
   const [challengeTask, setChallengeTask] = useState<Task | null>(null);
   const [isChallengeModalOpen, setIsChallengeModalOpen] = useState(false);
+  const [isProofModalOpen, setIsProofModalOpen] = useState(false);
+  const [pendingExecutionId, setPendingExecutionId] = useState<string | null>(null);
+  const [pendingTaskTitle, setPendingTaskTitle] = useState<string>('');
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Extract link metadata
