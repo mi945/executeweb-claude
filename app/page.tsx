@@ -25,10 +25,46 @@ export default function Home() {
   const pendingCount = incomingRequests.length;
   const challengeCount = incomingChallenges.length;
 
+  // Get current user
+  const { user } = db.useAuth();
+
   // Query all executions to calculate today's completions
   const { data } = db.useQuery({
     executions: {},
+    profiles: {
+      $: {
+        where: {
+          id: user?.id,
+        },
+      },
+    },
   });
+
+  // Track user identification and session start
+  useEffect(() => {
+    if (user?.id) {
+      const profile = data?.profiles?.[0];
+
+      identifyUser(user.id, {
+        email: user.email,
+        name: profile?.name,
+        profileImage: profile?.profileImage,
+        avatarColor: profile?.avatarColor,
+      });
+
+      startSession();
+      trackPageView('home');
+    }
+  }, [user?.id, data?.profiles]);
+
+  // Track tab changes
+  useEffect(() => {
+    if (user?.id) {
+      trackEvent('tab_viewed', {
+        tab: activeTab,
+      });
+    }
+  }, [activeTab, user?.id]);
 
   useEffect(() => {
     if (data?.executions) {
