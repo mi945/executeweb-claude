@@ -301,6 +301,9 @@ export default function TaskFeed() {
         setTimeout(() => setCelebratingTaskId(null), 3000);
       }
 
+      // Mark any linked challenge invite as completed
+      await markChallengeCompleted(executionId);
+
       // Update user streak (simplified logic)
       if (userProfile) {
         const today = new Date().setHours(0, 0, 0, 0);
@@ -345,6 +348,16 @@ export default function TaskFeed() {
   const handleCardClick = (task: Task) => {
     setSelectedTask(task);
     setIsModalOpen(true);
+  };
+
+  const handleChallengeFriend = (task: Task) => {
+    setChallengeTask(task);
+    setIsChallengeModalOpen(true);
+  };
+
+  const handleCloseChallengeModal = () => {
+    setIsChallengeModalOpen(false);
+    setTimeout(() => setChallengeTask(null), 300);
   };
 
   const handleCloseModal = () => {
@@ -738,6 +751,7 @@ export default function TaskFeed() {
                 currentUserId={user?.id}
                 onExecute={handleExecute}
                 onComplete={handleComplete}
+                onChallengeFriend={handleChallengeFriend}
                 isExecuting={executingTaskId === task.id}
                 isCompleting={isCompleting}
                 showCelebration={showCelebration}
