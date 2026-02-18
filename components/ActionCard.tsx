@@ -42,6 +42,7 @@ interface ActionCardProps {
   currentUserId?: string;
   onExecute: (taskId: string) => void;
   onComplete?: (executionId: string) => void;
+  onChallengeFriend?: (task: Task) => void;
   isExecuting: boolean;
   isCompleting?: boolean;
   onClick?: (task: Task) => void;
@@ -54,6 +55,7 @@ export default function ActionCard({
   currentUserId,
   onExecute,
   onComplete,
+  onChallengeFriend,
   isExecuting,
   isCompleting,
   onClick,
