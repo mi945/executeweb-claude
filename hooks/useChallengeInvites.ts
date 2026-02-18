@@ -270,6 +270,14 @@ export function useChallengeInvites() {
             completedAt: Date.now(),
           }),
         ]);
+
+        // Track challenge completed
+        trackEvent('challenge_completed', {
+          inviteId: invite.id,
+          taskId: invite.task?.id,
+          executionId,
+          fromUserId: invite.fromUser?.id,
+        });
       }
     },
     [user?.id, allInvites]
