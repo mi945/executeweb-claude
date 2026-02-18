@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import db from '@/lib/db';
 import CreatorMetadata from './CreatorMetadata';
+import ProofUploadModal from './ProofUploadModal';
 import { useChallengeInvites } from '@/hooks/useChallengeInvites';
 
 interface Execution {
@@ -29,6 +30,8 @@ export default function ActionDrawer() {
   const { user } = db.useAuth();
   const [celebrateId, setCelebrateId] = useState<string | null>(null);
   const [processingChallengeId, setProcessingChallengeId] = useState<string | null>(null);
+  const [isProofModalOpen, setIsProofModalOpen] = useState(false);
+  const [pendingExecution, setPendingExecution] = useState<Execution | null>(null);
 
   const {
     incomingChallenges,
