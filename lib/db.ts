@@ -20,6 +20,9 @@ const schema = i.schema({
       executedAt: i.number(),
       completed: i.boolean(),
       completedAt: i.number().optional(),
+      proofImageUrl: i.string().optional(),
+      proofUploadedAt: i.number().optional(),
+      proofExpiresAt: i.number().optional(),
     }),
 
     // Extended user profile data
