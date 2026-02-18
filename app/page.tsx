@@ -12,6 +12,7 @@ import NudgeNotifications from '@/components/NudgeNotifications';
 import FriendsList from '@/components/FriendsList';
 import { useFriendship } from '@/hooks/useFriendship';
 import { useChallengeInvites } from '@/hooks/useChallengeInvites';
+import { identifyUser, trackEvent, startSession, trackPageView } from '@/lib/analytics';
 
 export default function Home() {
   const router = useRouter();
