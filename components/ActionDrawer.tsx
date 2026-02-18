@@ -1,8 +1,10 @@
 'use client';
 
 import { useState } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import db from '@/lib/db';
 import CreatorMetadata from './CreatorMetadata';
+import { useChallengeInvites } from '@/hooks/useChallengeInvites';
 
 interface Execution {
   id: string;
@@ -26,6 +28,15 @@ interface Execution {
 export default function ActionDrawer() {
   const { user } = db.useAuth();
   const [celebrateId, setCelebrateId] = useState<string | null>(null);
+  const [processingChallengeId, setProcessingChallengeId] = useState<string | null>(null);
+
+  const {
+    incomingChallenges,
+    sentChallenges,
+    acceptChallenge,
+    declineChallenge,
+    markChallengeCompleted,
+  } = useChallengeInvites();
 
   // Get user's profile with their executions and task creators
   const { data } = db.useQuery({
@@ -63,6 +74,9 @@ export default function ActionDrawer() {
       // Trigger celebration animation
       setCelebrateId(execution.id);
       setTimeout(() => setCelebrateId(null), 2000);
+
+      // Mark any linked challenge invite as completed
+      await markChallengeCompleted(execution.id);
 
       // Update user streak (simplified logic)
       if (userProfile) {
@@ -104,8 +118,142 @@ export default function ActionDrawer() {
     }
   };
 
+  const handleAcceptChallenge = async (inviteId: string) => {
+    setProcessingChallengeId(inviteId);
+    const result = await acceptChallenge(inviteId);
+    if (!result.success) {
+      alert('Error: ' + result.error);
+    }
+    setProcessingChallengeId(null);
+  };
+
+  const handleDeclineChallenge = async (inviteId: string) => {
+    setProcessingChallengeId(inviteId);
+    const result = await declineChallenge(inviteId);
+    if (!result.success) {
+      alert('Error: ' + result.error);
+    }
+    setProcessingChallengeId(null);
+  };
+
+  // Get recently completed challenges I sent (to show completion status)
+  const recentCompletedChallenges = sentChallenges.filter(
+    (c) => c.status === 'completed'
+  ).slice(0, 5);
+
   return (
     <div className="space-y-6">
+      {/* Incoming Challenges */}
+      {incomingChallenges.length > 0 && (
+        <div>
+          <h2 className="text-2xl font-bold text-gray-900 mb-4 flex items-center gap-2">
+            <span className="inline-flex items-center justify-center w-7 h-7 bg-purple-100 rounded-full text-purple-600 text-sm font-bold">
+              {incomingChallenges.length}
+            </span>
+            Incoming Challenges
+          </h2>
+
+          <div className="space-y-3">
+            <AnimatePresence>
+              {incomingChallenges.map((invite) => (
+                <motion.div
+                  key={invite.id}
+                  initial={{ opacity: 0, x: -20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  exit={{ opacity: 0, x: 20, height: 0 }}
+                  className="bg-gradient-to-r from-purple-50 to-blue-50 rounded-xl border-2 border-purple-200 p-5"
+                >
+                  {/* Challenger info */}
+                  <div className="flex items-center gap-2 mb-3">
+                    {invite.fromUser?.profileImage ? (
+                      <img
+                        src={invite.fromUser.profileImage}
+                        alt={invite.fromUser.name || 'Friend'}
+                        className="w-7 h-7 rounded-full object-cover"
+                      />
+                    ) : (
+                      <div className={`w-7 h-7 rounded-full bg-gradient-to-br ${invite.fromUser?.avatarColor || 'from-purple-400 to-blue-500'} flex items-center justify-center text-white text-xs font-bold`}>
+                        {(invite.fromUser?.name || '?')[0].toUpperCase()}
+                      </div>
+                    )}
+                    <span className="text-sm font-semibold text-gray-900">
+                      {invite.fromUser?.name || 'A friend'}
+                    </span>
+                    <span className="text-sm text-gray-500">challenged you!</span>
+                  </div>
+
+                  {/* Task info */}
+                  <h3 className="text-lg font-bold text-gray-900 mb-1">
+                    {invite.task?.title || 'Unknown Task'}
+                  </h3>
+                  {invite.task?.description && (
+                    <p className="text-sm text-gray-600 line-clamp-2 mb-2">
+                      {invite.task.description}
+                    </p>
+                  )}
+
+                  {/* Message */}
+                  {invite.message && (
+                    <div className="bg-white/70 rounded-lg px-3 py-2 mb-3 text-sm text-gray-700 italic border border-purple-100">
+                      "{invite.message}"
+                    </div>
+                  )}
+
+                  {/* Actions */}
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() => handleAcceptChallenge(invite.id)}
+                      disabled={processingChallengeId === invite.id}
+                      className="flex-1 py-2 bg-gradient-to-r from-green-500 to-emerald-500 text-white rounded-xl font-semibold text-sm hover:shadow-lg transition-all hover:scale-[1.02] disabled:opacity-50"
+                    >
+                      {processingChallengeId === invite.id ? (
+                        <span className="flex items-center justify-center gap-1.5">
+                          <svg className="animate-spin w-4 h-4" fill="none" viewBox="0 0 24 24">
+                            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                          </svg>
+                          Accepting...
+                        </span>
+                      ) : (
+                        'Accept Challenge'
+                      )}
+                    </button>
+                    <button
+                      onClick={() => handleDeclineChallenge(invite.id)}
+                      disabled={processingChallengeId === invite.id}
+                      className="px-4 py-2 bg-gray-200 text-gray-700 rounded-xl text-sm font-medium hover:bg-gray-300 transition-all disabled:opacity-50"
+                    >
+                      Decline
+                    </button>
+                  </div>
+                </motion.div>
+              ))}
+            </AnimatePresence>
+          </div>
+        </div>
+      )}
+
+      {/* Challenge Completions (for challenges I sent) */}
+      {recentCompletedChallenges.length > 0 && (
+        <div className="bg-green-50 rounded-xl border border-green-200 p-4">
+          <h3 className="text-sm font-semibold text-green-800 mb-2">Challenge Wins</h3>
+          <div className="space-y-2">
+            {recentCompletedChallenges.map((challenge) => (
+              <div key={challenge.id} className="flex items-center gap-2 text-sm">
+                <span className="text-green-600 font-bold">✓</span>
+                <span className="font-medium text-green-800">
+                  {challenge.toUser?.name || 'Your friend'}
+                </span>
+                <span className="text-green-700">completed</span>
+                <span className="font-medium text-green-800 truncate">
+                  "{challenge.task?.title}"
+                </span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
       {/* Active Tasks */}
       <div>
         <h2 className="text-2xl font-bold text-gray-900 mb-4">
