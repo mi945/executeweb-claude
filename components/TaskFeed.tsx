@@ -455,7 +455,7 @@ export default function TaskFeed() {
     <div className="space-y-4">
       {/* Create Task Button */}
       <div className="flex justify-between items-center">
-        <h2 className="text-2xl font-bold text-gray-900">Discover Actions</h2>
+        <h2 className="text-2xl font-bold text-gray-900">Discover Challenges</h2>
         <motion.button
           whileHover={{ scale: 1.05 }}
           whileTap={{ scale: 0.95 }}

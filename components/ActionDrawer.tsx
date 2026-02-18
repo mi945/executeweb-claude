@@ -257,7 +257,7 @@ export default function ActionDrawer() {
       {/* Active Tasks */}
       <div>
         <h2 className="text-2xl font-bold text-gray-900 mb-4">
-          Your Actions ({activeExecutions.length})
+          Your Challenges ({activeExecutions.length})
         </h2>
 
         {activeExecutions.length === 0 ? (
