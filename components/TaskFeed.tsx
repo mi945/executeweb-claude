@@ -383,6 +383,11 @@ export default function TaskFeed() {
       setIsProofModalOpen(false);
       setPendingExecutionId(null);
       setPendingTaskTitle('');
+
+      // Show undo toast
+      setLastCompletedExecutionId(pendingExecutionId);
+      setToastMessage(`Task completed! ${task?.title ? `"${task.title.substring(0, 30)}${task.title.length > 30 ? '...' : ''}"` : ''}`);
+      setShowToast(true);
     } catch (err: any) {
       alert('Error completing task: ' + err.message);
       throw err; // Re-throw to let modal handle the error
@@ -453,6 +458,36 @@ export default function TaskFeed() {
       setIsProofModalOpen(false);
       setPendingExecutionId(null);
       setPendingTaskTitle('');
+
+      // Show undo toast
+      setLastCompletedExecutionId(pendingExecutionId);
+      setToastMessage(`Task completed! ${task?.title ? `"${task.title.substring(0, 30)}${task.title.length > 30 ? '...' : ''}"` : ''}`);
+      setShowToast(true);
+    }
+  };
+
+  const handleUndoComplete = async () => {
+    if (!lastCompletedExecutionId) return;
+
+    try {
+      await db.transact([
+        db.tx.executions[lastCompletedExecutionId].update({
+          completed: false,
+          completedAt: undefined,
+          proofImageUrl: undefined,
+          proofUploadedAt: undefined,
+          proofExpiresAt: undefined,
+        }),
+      ]);
+
+      // Track undo action
+      trackEvent('task_uncompleted', {
+        executionId: lastCompletedExecutionId,
+      });
+
+      setLastCompletedExecutionId(null);
+    } catch (err: any) {
+      alert('Error undoing completion: ' + err.message);
     }
   };
 
