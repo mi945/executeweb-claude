@@ -29,6 +29,7 @@ export type AnalyticsEvent =
   | 'task_executed'
   | 'task_completed'
   | 'task_uncompleted'
+  | 'task_reverted'
 
   // Friend events
   | 'friend_request_sent'
