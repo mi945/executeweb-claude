@@ -298,6 +298,69 @@ export default function AdminDashboard() {
           </div>
         </div>
 
+        {/* User List Section */}
+        <div className="bg-white rounded-2xl shadow-lg p-6 mb-8">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-xl font-bold text-gray-900">👥 All Users ({profiles.length})</h2>
+            <a
+              href="/debug-analytics"
+              target="_blank"
+              className="px-4 py-2 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 transition-all text-sm"
+            >
+              Debug Analytics →
+            </a>
+          </div>
+          <div className="text-sm text-gray-600 mb-4">
+            This shows all unique users in your database. Each should have a unique PostHog distinct_id.
+          </div>
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead>
+                <tr className="border-b border-gray-200">
+                  <th className="text-left py-3 px-4 font-semibold text-gray-700">#</th>
+                  <th className="text-left py-3 px-4 font-semibold text-gray-700">User ID</th>
+                  <th className="text-left py-3 px-4 font-semibold text-gray-700">Name</th>
+                  <th className="text-left py-3 px-4 font-semibold text-gray-700">Completions</th>
+                  <th className="text-left py-3 px-4 font-semibold text-gray-700">Streak</th>
+                </tr>
+              </thead>
+              <tbody>
+                {profiles.map((profile: any, index: number) => {
+                  const userExecutions = executions.filter((e: any) => e.user?.id === profile.id);
+                  const userCompletions = userExecutions.filter((e: any) => e.completed).length;
+
+                  return (
+                    <tr key={profile.id} className="border-b border-gray-100 hover:bg-gray-50">
+                      <td className="py-3 px-4 text-gray-600">{index + 1}</td>
+                      <td className="py-3 px-4">
+                        <div className="font-mono text-xs bg-gray-100 px-2 py-1 rounded inline-block">
+                          {profile.id.substring(0, 8)}...
+                        </div>
+                      </td>
+                      <td className="py-3 px-4 font-medium text-gray-900">
+                        {profile.name || 'Unnamed User'}
+                      </td>
+                      <td className="py-3 px-4 text-gray-600">{userCompletions}</td>
+                      <td className="py-3 px-4">
+                        <span className={`px-2 py-1 rounded-full text-xs font-semibold ${
+                          profile.dailyStreak > 0 ? 'bg-orange-100 text-orange-800' : 'bg-gray-100 text-gray-600'
+                        }`}>
+                          {profile.dailyStreak || 0} 🔥
+                        </span>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+          {profiles.length === 0 && (
+            <div className="text-center py-8 text-gray-500">
+              No users found
+            </div>
+          )}
+        </div>
+
         {/* Task Management Section */}
         <div className="bg-white rounded-2xl shadow-lg p-6 mb-8">
           <div className="flex items-center justify-between mb-6">
