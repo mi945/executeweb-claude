@@ -45,6 +45,7 @@ interface ActionCardProps {
   currentUserId?: string;
   onExecute: (taskId: string) => void;
   onComplete?: (executionId: string) => void;
+  onRevert?: (executionId: string) => void;
   onChallengeFriend?: (task: Task) => void;
   isExecuting: boolean;
   isCompleting?: boolean;
@@ -58,6 +59,7 @@ export default function ActionCard({
   currentUserId,
   onExecute,
   onComplete,
+  onRevert,
   onChallengeFriend,
   isExecuting,
   isCompleting,
@@ -126,7 +128,7 @@ export default function ActionCard({
 
   // Button state
   const getButtonState = () => {
-    if (hasCompleted) return { text: 'Done', class: 'bg-green-500 text-white', icon: '✓', disabled: true };
+    if (hasCompleted) return { text: 'Done', class: 'bg-green-500 hover:bg-amber-500 text-white hover:shadow-md', icon: '✓', disabled: false };
     if (hasExecuted) return { text: 'Mark Done', class: 'bg-amber-500 hover:bg-green-500 text-white hover:shadow-md', icon: '✓', disabled: false };
     return { text: 'Execute', class: 'bg-gradient-to-r from-purple-600 to-blue-600 text-white hover:shadow-md', icon: '▶', disabled: false };
   };
@@ -134,8 +136,10 @@ export default function ActionCard({
 
   // Handle button click based on state
   const handleButtonClick = () => {
-    if (hasCompleted) return; // Already completed, do nothing
-    if (hasExecuted && onComplete && executionId) {
+    if (hasCompleted && onRevert && executionId) {
+      // Revert from completed back to in progress
+      onRevert(executionId);
+    } else if (hasExecuted && onComplete && executionId) {
       // Mark as complete
       onComplete(executionId);
     } else if (!hasExecuted) {

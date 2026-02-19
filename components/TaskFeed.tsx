@@ -491,6 +491,27 @@ export default function TaskFeed() {
     }
   };
 
+  const handleRevert = async (executionId: string) => {
+    try {
+      await db.transact([
+        db.tx.executions[executionId].update({
+          completed: false,
+          completedAt: undefined,
+          proofImageUrl: undefined,
+          proofUploadedAt: undefined,
+          proofExpiresAt: undefined,
+        }),
+      ]);
+
+      // Track revert action
+      trackEvent('task_reverted', {
+        executionId,
+      });
+    } catch (err: any) {
+      alert('Error reverting task: ' + err.message);
+    }
+  };
+
   const toggleCardExpansion = (taskId: string) => {
     setExpandedCards((prev) => {
       const newSet = new Set(prev);
@@ -909,6 +930,7 @@ export default function TaskFeed() {
                 currentUserId={user?.id}
                 onExecute={handleExecute}
                 onComplete={handleComplete}
+                onRevert={handleRevert}
                 onChallengeFriend={handleChallengeFriend}
                 isExecuting={executingTaskId === task.id}
                 isCompleting={isCompleting}
