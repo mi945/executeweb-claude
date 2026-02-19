@@ -29,15 +29,13 @@ export default function ProofUploadModal({
   const handleImageUpload = async (file: File) => {
     if (!file) return;
 
-    // Validate file type
-    if (!file.type.startsWith('image/')) {
+    if (!isValidImageFile(file)) {
       setError('Please select an image file');
       return;
     }
 
-    // Validate file size (max 2MB)
-    if (file.size > 2 * 1024 * 1024) {
-      setError('Image size must be less than 2MB');
+    if (file.size > MAX_RAW_FILE_SIZE) {
+      setError('File is too large. Please select a smaller image.');
       return;
     }
 
@@ -45,19 +43,11 @@ export default function ProofUploadModal({
     setError('');
 
     try {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        const base64String = reader.result as string;
-        setImagePreview(base64String);
-        setIsUploading(false);
-      };
-      reader.onerror = () => {
-        setError('Error reading file');
-        setIsUploading(false);
-      };
-      reader.readAsDataURL(file);
+      const compressed = await compressImage(file);
+      setImagePreview(compressed);
+      setIsUploading(false);
     } catch (err) {
-      setError('Error uploading image');
+      setError('Error processing image. Please try another file.');
       setIsUploading(false);
     }
   };
@@ -194,7 +184,7 @@ export default function ProofUploadModal({
                           </svg>
                           <p className="text-gray-700 font-medium mb-1">Upload Proof Image</p>
                           <p className="text-sm text-gray-500">Click or drag and drop</p>
-                          <p className="text-xs text-gray-400 mt-1.5">PNG, JPG up to 2MB</p>
+                          <p className="text-xs text-gray-400 mt-1.5">PNG, JPG, HEIC — any size</p>
                         </>
                       )}
                       <input
