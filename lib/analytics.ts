@@ -86,7 +86,16 @@ export function identifyUser(
   if (typeof window === 'undefined') return;
   if (!process.env.NEXT_PUBLIC_POSTHOG_KEY) return;
 
+  if (process.env.NODE_ENV === 'development') {
+    console.log('[analytics] Identifying user:', userId, traits);
+    console.log('[analytics] Previous distinct_id:', posthog.get_distinct_id());
+  }
+
   posthog.identify(userId, traits);
+
+  if (process.env.NODE_ENV === 'development') {
+    console.log('[analytics] New distinct_id:', posthog.get_distinct_id());
+  }
 }
 
 // Set user properties (for updating existing users)
