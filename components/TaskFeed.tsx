@@ -12,6 +12,7 @@ import Toast from './Toast';
 import { useTaskPresence } from '@/hooks/useTaskPresence';
 import { useChallengeInvites } from '@/hooks/useChallengeInvites';
 import { trackEvent } from '@/lib/analytics';
+import { compressImage, isValidImageFile, MAX_RAW_FILE_SIZE } from '@/lib/imageUtils';
 
 interface Task {
   id: string;
@@ -137,35 +138,25 @@ export default function TaskFeed() {
   const handleImageUpload = async (file: File) => {
     if (!file) return;
 
-    // Validate file type
-    if (!file.type.startsWith('image/')) {
+    if (!isValidImageFile(file)) {
       alert('Please select an image file');
       return;
     }
 
-    // Validate file size (max 2MB)
-    if (file.size > 2 * 1024 * 1024) {
-      alert('Image size must be less than 2MB');
+    if (file.size > MAX_RAW_FILE_SIZE) {
+      alert('File is too large. Please select a smaller image.');
       return;
     }
 
     setIsUploading(true);
 
     try {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        const base64String = reader.result as string;
-        setImagePreview(base64String);
-        setNewTask({ ...newTask, imageUrl: base64String });
-        setIsUploading(false);
-      };
-      reader.onerror = () => {
-        alert('Error reading file');
-        setIsUploading(false);
-      };
-      reader.readAsDataURL(file);
+      const compressed = await compressImage(file);
+      setImagePreview(compressed);
+      setNewTask({ ...newTask, imageUrl: compressed });
+      setIsUploading(false);
     } catch (err) {
-      alert('Error uploading image');
+      alert('Error processing image. Please try another file.');
       setIsUploading(false);
     }
   };
@@ -732,7 +723,7 @@ export default function TaskFeed() {
                             Drag & drop your image here
                           </p>
                           <p className="text-gray-400 text-sm">
-                            or click to browse (max 2MB)
+                            or click to browse
                           </p>
                         </>
                       )}
