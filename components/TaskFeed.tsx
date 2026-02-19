@@ -8,6 +8,7 @@ import ActionCard from './ActionCard';
 import TaskDetailModal from './TaskDetailModal';
 import ChallengeFriendModal from './ChallengeFriendModal';
 import ProofUploadModal from './ProofUploadModal';
+import Toast from './Toast';
 import { useTaskPresence } from '@/hooks/useTaskPresence';
 import { useChallengeInvites } from '@/hooks/useChallengeInvites';
 import { trackEvent } from '@/lib/analytics';
@@ -64,6 +65,9 @@ export default function TaskFeed() {
   const [isProofModalOpen, setIsProofModalOpen] = useState(false);
   const [pendingExecutionId, setPendingExecutionId] = useState<string | null>(null);
   const [pendingTaskTitle, setPendingTaskTitle] = useState<string>('');
+  const [showToast, setShowToast] = useState(false);
+  const [toastMessage, setToastMessage] = useState('');
+  const [lastCompletedExecutionId, setLastCompletedExecutionId] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Extract link metadata
