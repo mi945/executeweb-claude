@@ -51,6 +51,7 @@ export default function Home() {
     if (user?.id) {
       const profile = data?.profiles?.[0];
 
+      // Identify user with PostHog
       identifyUser(user.id, {
         email: user.email || undefined,
         name: profile?.name,
@@ -58,10 +59,11 @@ export default function Home() {
         avatarColor: profile?.avatarColor,
       });
 
+      // Only track session start once per user session
       startSession();
       trackPageView('home');
     }
-  }, [user?.id, data?.profiles]);
+  }, [user?.id]);
 
   // Track tab changes
   useEffect(() => {
