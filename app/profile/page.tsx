@@ -3,6 +3,7 @@
 import { useState, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import db from '@/lib/db';
+import { compressAvatar, compressAvatarThumb, isValidImageFile, MAX_RAW_FILE_SIZE } from '@/lib/imageUtils';
 
 export default function ProfilePage() {
   const router = useRouter();
@@ -52,34 +53,29 @@ export default function ProfilePage() {
     userProfile?.executions?.filter((e: any) => !e.completed).length || 0;
 
   // Handle file selection
-  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    // Validate file type
-    const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
-    if (!allowedTypes.includes(file.type)) {
-      setUploadError('Invalid file type. Only JPG, PNG, and WebP images are allowed.');
+    if (!isValidImageFile(file)) {
+      setUploadError('Invalid file type. Please select an image file.');
       return;
     }
 
-    // Validate file size (5MB max)
-    const maxSize = 5 * 1024 * 1024;
-    if (file.size > maxSize) {
-      setUploadError('File is too large. Maximum size is 5MB.');
+    if (file.size > MAX_RAW_FILE_SIZE) {
+      setUploadError('File is too large. Please select a smaller image.');
       return;
     }
 
-    // Clear any previous errors
     setUploadError('');
-    setSelectedFile(file);
 
-    // Create preview
-    const reader = new FileReader();
-    reader.onloadend = () => {
-      setPreviewUrl(reader.result as string);
-    };
-    reader.readAsDataURL(file);
+    try {
+      const preview = await compressAvatar(file);
+      setPreviewUrl(preview);
+      setSelectedFile(file);
+    } catch (err) {
+      setUploadError('Error processing image. Please try another file.');
+    }
   };
 
   // Handle avatar upload
@@ -90,29 +86,18 @@ export default function ProfilePage() {
     setUploadError('');
 
     try {
-      const formData = new FormData();
-      formData.append('file', selectedFile);
+      const [profileImage, thumbnailImage] = await Promise.all([
+        compressAvatar(selectedFile),
+        compressAvatarThumb(selectedFile),
+      ]);
 
-      const response = await fetch('/api/avatar/upload', {
-        method: 'POST',
-        body: formData,
-      });
-
-      const result = await response.json();
-
-      if (!response.ok) {
-        throw new Error(result.error || 'Upload failed');
-      }
-
-      // Update profile with new avatar base64 strings
       await db.transact([
         db.tx.profiles[user.id].update({
-          profileImage: result.profileImage,
-          profileImageThumb: result.thumbnailImage,
+          profileImage,
+          profileImageThumb: thumbnailImage,
         }),
       ]);
 
-      // Clear preview
       setSelectedFile(null);
       setPreviewUrl('');
 
@@ -290,7 +275,7 @@ export default function ProfilePage() {
                 <input
                   ref={fileInputRef}
                   type="file"
-                  accept="image/jpeg,image/jpg,image/png,image/webp"
+                  accept="image/*"
                   onChange={handleFileSelect}
                   className="hidden"
                 />
