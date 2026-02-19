@@ -2,6 +2,7 @@
 
 import { useState, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { compressImage, isValidImageFile, MAX_RAW_FILE_SIZE } from '@/lib/imageUtils';
 
 interface ProofUploadModalProps {
   isOpen: boolean;
