@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { getRelativeTime } from '@/lib/time';
 import { useTaskPresence } from '@/hooks/useTaskPresence';
+import { useRespect } from '@/hooks/useRespect';
 import TaskComments from './TaskComments';
 import Link from 'next/link';
 import db from '@/lib/db';
@@ -94,6 +95,21 @@ export default function ActionCard({
     userProfile,
     isExecuting: hasExecuted && !hasCompleted,
   });
+
+  // Use respect hook
+  const { getRespectCount, getRespecters, toggleRespect, hasRespected } = useRespect();
+
+  // Calculate total respects for this task (sum of all completed executions)
+  const completedExecutions = task.executions?.filter(e => e.completed) || [];
+  const totalRespects = completedExecutions.reduce(
+    (sum, exec) => sum + getRespectCount(exec.id),
+    0
+  );
+
+  // Check if current user has respected any completion
+  const currentUserRespected = completedExecutions.some(exec =>
+    hasRespected(exec.id)
+  );
 
   // Determine if description needs expansion (shorter threshold for compact)
   const descriptionNeedsExpansion = task.description.length > 100;
@@ -324,6 +340,16 @@ export default function ActionCard({
                 <span className="text-xs text-gray-500">
                   {task.executions?.filter(e => e.completed).length || 0} done
                 </span>
+
+                {/* Respects Count */}
+                {totalRespects > 0 && (
+                  <span className="text-xs text-purple-600 font-semibold flex items-center gap-0.5">
+                    <svg className="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 20 20">
+                      <path d="M2 10.5a1.5 1.5 0 113 0v6a1.5 1.5 0 01-3 0v-6zM6 10.333v5.43a2 2 0 001.106 1.79l.05.025A4 4 0 008.943 18h5.416a2 2 0 001.962-1.608l1.2-6A2 2 0 0015.56 8H12V4a2 2 0 00-2-2 1 1 0 00-1 1v.667a4 4 0 01-.8 2.4L6.8 7.933a4 4 0 00-.8 2.4z" />
+                    </svg>
+                    {totalRespects}
+                  </span>
+                )}
               </div>
             )}
 
