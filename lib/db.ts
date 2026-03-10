@@ -246,15 +246,15 @@ const schema = i.schema({
       },
     },
 
-    // Respect on execution (what completion was respected)
-    respectExecution: {
+    // Respect on task (what task was respected)
+    respectTask: {
       forward: {
         on: 'respects',
         has: 'one',
-        label: 'execution',
+        label: 'task',
       },
       reverse: {
-        on: 'executions',
+        on: 'tasks',
         has: 'many',
         label: 'respects',
       },
