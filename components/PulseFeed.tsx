@@ -3,7 +3,6 @@
 import { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import db from '@/lib/db';
-import Link from 'next/link';
 
 interface Completion {
   id: string;
