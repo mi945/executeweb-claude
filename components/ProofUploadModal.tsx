@@ -35,6 +35,85 @@ export default function ProofUploadModal({
   const [croppedAreaPixels, setCroppedAreaPixels] = useState<Area | null>(null);
   const [isCropping, setIsCropping] = useState(false);
 
+  const onCropComplete = useCallback((croppedArea: Area, croppedAreaPixels: Area) => {
+    setCroppedAreaPixels(croppedAreaPixels);
+  }, []);
+
+  const createCroppedImage = async (
+    imageSrc: string,
+    pixelCrop: Area
+  ): Promise<Blob> => {
+    const image = new Image();
+    image.src = imageSrc;
+
+    await new Promise((resolve) => {
+      image.onload = resolve;
+    });
+
+    const canvas = document.createElement('canvas');
+    const ctx = canvas.getContext('2d');
+
+    if (!ctx) {
+      throw new Error('Failed to get canvas context');
+    }
+
+    canvas.width = pixelCrop.width;
+    canvas.height = pixelCrop.height;
+
+    ctx.drawImage(
+      image,
+      pixelCrop.x,
+      pixelCrop.y,
+      pixelCrop.width,
+      pixelCrop.height,
+      0,
+      0,
+      pixelCrop.width,
+      pixelCrop.height
+    );
+
+    return new Promise((resolve, reject) => {
+      canvas.toBlob((blob) => {
+        if (blob) {
+          resolve(blob);
+        } else {
+          reject(new Error('Canvas is empty'));
+        }
+      }, 'image/jpeg');
+    });
+  };
+
+  const handleCropConfirm = async () => {
+    if (!imageToCrop || !croppedAreaPixels) return;
+
+    setIsCropping(true);
+    setError('');
+
+    try {
+      const croppedBlob = await createCroppedImage(imageToCrop, croppedAreaPixels);
+      const croppedFile = new File([croppedBlob], 'cropped-image.jpg', { type: 'image/jpeg' });
+
+      // Compress the cropped image
+      const compressed = await compressImage(croppedFile);
+      setImagePreview(compressed);
+      setImageToCrop('');
+      setIsCropping(false);
+    } catch (err) {
+      setError('Error cropping image. Please try again.');
+      setIsCropping(false);
+    }
+  };
+
+  const handleCropCancel = () => {
+    setImageToCrop('');
+    setCrop({ x: 0, y: 0 });
+    setZoom(1);
+    setCroppedAreaPixels(null);
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
+  };
+
   const handleImageUpload = async (file: File) => {
     if (!file) return;
 
@@ -52,9 +131,17 @@ export default function ProofUploadModal({
     setError('');
 
     try {
-      const compressed = await compressImage(file);
-      setImagePreview(compressed);
-      setIsUploading(false);
+      // Load image for cropping
+      const reader = new FileReader();
+      reader.onload = () => {
+        setImageToCrop(reader.result as string);
+        setIsUploading(false);
+      };
+      reader.onerror = () => {
+        setError('Error loading image. Please try another file.');
+        setIsUploading(false);
+      };
+      reader.readAsDataURL(file);
     } catch (err) {
       setError('Error processing image. Please try another file.');
       setIsUploading(false);
@@ -103,9 +190,14 @@ export default function ProofUploadModal({
 
   const resetState = () => {
     setImagePreview('');
+    setImageToCrop('');
     setError('');
     setIsUploading(false);
     setIsSubmitting(false);
+    setIsCropping(false);
+    setCrop({ x: 0, y: 0 });
+    setZoom(1);
+    setCroppedAreaPixels(null);
     if (fileInputRef.current) {
       fileInputRef.current.value = '';
     }
