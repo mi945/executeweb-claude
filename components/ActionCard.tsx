@@ -395,22 +395,20 @@ export default function ActionCard({
             <span>Challenge a friend</span>
           </button>
 
-          {/* Comment Count Display - Non-interactive */}
-          {commentCount > 0 && (
-            <div className="flex-1 flex items-center justify-center gap-1.5 py-2 text-xs text-gray-500">
-              <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"
-                />
-              </svg>
-              <span>
-                {commentCount} {commentCount === 1 ? 'comment' : 'comments'}
-              </span>
-            </div>
-          )}
+          {/* Comments */}
+          <div className="flex-1 flex items-center justify-center gap-1.5 py-2 text-xs text-gray-500">
+            <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"
+              />
+            </svg>
+            <span>
+              {commentCount > 0 ? `${commentCount} ${commentCount === 1 ? 'comment' : 'comments'}` : 'Comments'}
+            </span>
+          </div>
 
           {/* Respect Button - Like button for tasks */}
           <button
@@ -461,12 +459,10 @@ export default function ActionCard({
           )}
         </div>
 
-        {/* Comments Section - Always shown if comments exist */}
-        {commentCount > 0 && (
-          <div className="px-4 pb-3 border-t border-gray-100">
-            <TaskComments taskId={task.id} compact />
-          </div>
-        )}
+        {/* Comments Section - Always shown */}
+        <div className="px-4 pb-3 border-t border-gray-100">
+          <TaskComments taskId={task.id} compact />
+        </div>
 
         {/* Proof Gallery */}
         {showProofs && proofCount > 0 && (
