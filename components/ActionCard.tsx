@@ -97,19 +97,11 @@ export default function ActionCard({
   });
 
   // Use respect hook
-  const { getRespectCount, getRespecters, toggleRespect, hasRespected } = useRespect();
+  const { getRespectCount, toggleRespect, hasRespected } = useRespect();
 
-  // Calculate total respects for this task (sum of all completed executions)
-  const completedExecutions = task.executions?.filter(e => e.completed) || [];
-  const totalRespects = completedExecutions.reduce(
-    (sum, exec) => sum + getRespectCount(exec.id),
-    0
-  );
-
-  // Check if current user has respected any completion
-  const currentUserRespected = completedExecutions.some(exec =>
-    hasRespected(exec.id)
-  );
+  // Get respect data for this task
+  const respectCount = getRespectCount(task.id);
+  const userHasRespected = hasRespected(task.id);
 
   // Determine if description needs expansion (shorter threshold for compact)
   const descriptionNeedsExpansion = task.description.length > 100;

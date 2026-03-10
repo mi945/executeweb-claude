@@ -13,32 +13,30 @@ export function useRespect() {
   const { data } = db.useQuery({
     respects: {
       fromUser: {},
-      execution: {
-        user: {},
-      },
+      task: {},
     },
   });
 
   const respects = (data?.respects || []) as any[];
 
   const toggleRespect = useCallback(
-    async (executionId: string, executionUserId: string) => {
+    async (taskId: string) => {
       if (!user?.id) {
         console.error('User not authenticated');
         return;
       }
 
-      // Prevent concurrent requests for the same execution
-      if (inFlightRef.current.has(executionId)) {
+      // Prevent concurrent requests for the same task
+      if (inFlightRef.current.has(taskId)) {
         return;
       }
 
-      inFlightRef.current.add(executionId);
+      inFlightRef.current.add(taskId);
 
       try {
-        // Check if user already respected this execution
+        // Check if user already respected this task
         const existingRespect = respects.find(
-          (r) => r.fromUser?.id === user.id && r.execution?.id === executionId
+          (r) => r.fromUser?.id === user.id && r.task?.id === taskId
         );
 
         if (existingRespect) {
@@ -48,8 +46,7 @@ export function useRespect() {
           ]);
 
           trackEvent('respect_removed', {
-            executionId,
-            respecteeUserId: executionUserId,
+            taskId,
           });
         } else {
           // Add respect
@@ -58,47 +55,46 @@ export function useRespect() {
             db.tx.respects[respectId].update({
               createdAt: Date.now(),
             }),
-            db.tx.executions[executionId].link({ respects: respectId }),
+            db.tx.tasks[taskId].link({ respects: respectId }),
             db.tx.profiles[user.id].link({ givenRespects: respectId }),
           ]);
 
           trackEvent('respect_given', {
-            executionId,
-            respecteeUserId: executionUserId,
+            taskId,
           });
         }
       } catch (error) {
         console.error('Error toggling respect:', error);
       } finally {
-        inFlightRef.current.delete(executionId);
+        inFlightRef.current.delete(taskId);
       }
     },
     [user?.id, respects]
   );
 
-  // Check if current user has respected a specific execution
+  // Check if current user has respected a specific task
   const hasRespected = useCallback(
-    (executionId: string) => {
+    (taskId: string) => {
       return respects.some(
-        (r) => r.fromUser?.id === user?.id && r.execution?.id === executionId
+        (r) => r.fromUser?.id === user?.id && r.task?.id === taskId
       );
     },
     [user?.id, respects]
   );
 
-  // Get respect count for an execution
+  // Get respect count for a task
   const getRespectCount = useCallback(
-    (executionId: string) => {
-      return respects.filter((r) => r.execution?.id === executionId).length;
+    (taskId: string) => {
+      return respects.filter((r) => r.task?.id === taskId).length;
     },
     [respects]
   );
 
-  // Get users who respected an execution
+  // Get users who respected a task
   const getRespecters = useCallback(
-    (executionId: string) => {
+    (taskId: string) => {
       return respects
-        .filter((r) => r.execution?.id === executionId)
+        .filter((r) => r.task?.id === taskId)
         .map((r) => r.fromUser)
         .filter(Boolean);
     },
