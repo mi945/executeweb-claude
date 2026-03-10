@@ -58,14 +58,21 @@ export default function TaskComments({ taskId, compact = false }: TaskCommentsPr
   // Filter and organize comments for this specific task
   const allComments = ((data?.comments || []) as any[]).filter((c) => c.task?.id === taskId);
 
-  // Separate parent comments from replies
+  // Separate parent comments from replies with smart relevance sorting
   const parentComments = allComments
     .filter((c) => !c.parentComment?.id)
     .map((c) => ({
       ...c,
       replies: allComments.filter((reply) => reply.parentComment?.id === c.id),
     }))
-    .sort((a, b) => b.createdAt - a.createdAt) as Comment[];
+    .sort((a, b) => {
+      // Prioritize comments with more replies (higher engagement)
+      const replyDiff = (b.replies?.length || 0) - (a.replies?.length || 0);
+      if (replyDiff !== 0) return replyDiff;
+
+      // Then sort by recency (newer first)
+      return b.createdAt - a.createdAt;
+    }) as Comment[];
 
   const totalComments = allComments.length;
   const displayedComments = showAllComments ? parentComments : parentComments.slice(0, 2);

@@ -67,7 +67,7 @@ export default function ActionCard({
   showCelebration,
 }: ActionCardProps) {
   const [expanded, setExpanded] = useState(false);
-  const [showComments, setShowComments] = useState(false);
+  const [showComments, setShowComments] = useState(true); // Auto-show comments
   const [showProofs, setShowProofs] = useState(false);
   const [selectedProof, setSelectedProof] = useState<string | null>(null);
 
@@ -388,23 +388,25 @@ export default function ActionCard({
             <span>Challenge a friend</span>
           </button>
 
-          {/* Comments Button */}
-          <button
-            onClick={() => setShowComments(!showComments)}
-            className="flex-1 flex items-center justify-center gap-1.5 py-2 text-xs text-gray-500 hover:text-purple-600 hover:bg-gray-100/50 transition-colors"
-          >
-          <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"
-            />
-          </svg>
-          <span>
-            {showComments ? 'Hide' : commentCount > 0 ? `${commentCount} ${commentCount === 1 ? 'comment' : 'comments'}` : 'Comments'}
-          </span>
-          </button>
+          {/* Comments Button - Only show if there are comments to hide/show */}
+          {commentCount > 0 && (
+            <button
+              onClick={() => setShowComments(!showComments)}
+              className="flex-1 flex items-center justify-center gap-1.5 py-2 text-xs text-gray-500 hover:text-purple-600 hover:bg-gray-100/50 transition-colors"
+            >
+              <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"
+                />
+              </svg>
+              <span>
+                {showComments ? 'Hide' : ''}{commentCount} {commentCount === 1 ? 'comment' : 'comments'}
+              </span>
+            </button>
+          )}
 
           {/* Proof Gallery Button - Only show if there are proofs */}
           {proofCount > 0 && (
@@ -427,7 +429,7 @@ export default function ActionCard({
           )}
         </div>
 
-        {showComments && (
+        {showComments && commentCount > 0 && (
           <div className="px-4 pb-3 border-t border-gray-100">
             <TaskComments taskId={task.id} compact />
           </div>
