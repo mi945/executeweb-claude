@@ -1,7 +1,9 @@
 'use client';
 
-import { useState, useRef } from 'react';
+import { useState, useRef, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import Cropper from 'react-easy-crop';
+import type { Area, Point } from 'react-easy-crop';
 import { compressImage, isValidImageFile, MAX_RAW_FILE_SIZE } from '@/lib/imageUtils';
 
 interface ProofUploadModalProps {
@@ -25,6 +27,13 @@ export default function ProofUploadModal({
   const [error, setError] = useState<string>('');
   const [isDragging, setIsDragging] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Cropping state
+  const [imageToCrop, setImageToCrop] = useState<string>('');
+  const [crop, setCrop] = useState<Point>({ x: 0, y: 0 });
+  const [zoom, setZoom] = useState(1);
+  const [croppedAreaPixels, setCroppedAreaPixels] = useState<Area | null>(null);
+  const [isCropping, setIsCropping] = useState(false);
 
   const handleImageUpload = async (file: File) => {
     if (!file) return;
