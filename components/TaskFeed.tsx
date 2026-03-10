@@ -589,9 +589,6 @@ export default function TaskFeed() {
 
           <div className="flex items-center justify-between">
             <div className="text-sm text-gray-500">0 completions</div>
-            <div className="px-6 py-2 bg-gradient-to-r from-purple-600 to-blue-600 text-white rounded-xl font-semibold">
-              Execute
-            </div>
           </div>
         </div>
       </motion.div>
@@ -642,7 +639,7 @@ export default function TaskFeed() {
                     placeholder="What needs to be done?"
                     value={newTask.title}
                     onChange={(e) => setNewTask({ ...newTask, title: e.target.value })}
-                    className="w-full px-4 py-4 rounded-xl border-2 border-gray-200 focus:border-purple-500 focus:outline-none text-2xl font-bold placeholder:text-gray-300"
+                    className="w-full px-4 py-4 rounded-xl border-2 border-gray-200 focus:border-purple-500 focus:outline-none text-2xl font-bold text-gray-900 placeholder:text-gray-300"
                     required
                   />
                 </div>
@@ -658,7 +655,7 @@ export default function TaskFeed() {
                     onChange={(e) =>
                       setNewTask({ ...newTask, description: e.target.value })
                     }
-                    className="w-full px-4 py-3 rounded-xl border-2 border-gray-200 focus:border-purple-500 focus:outline-none resize-none text-lg"
+                    className="w-full px-4 py-3 rounded-xl border-2 border-gray-200 focus:border-purple-500 focus:outline-none resize-none text-lg text-gray-900"
                     rows={4}
                     required
                   />
@@ -753,7 +750,7 @@ export default function TaskFeed() {
                     onChange={(e) =>
                       setNewTask({ ...newTask, externalLink: e.target.value })
                     }
-                    className="w-full px-4 py-3 rounded-xl border-2 border-gray-200 focus:border-purple-500 focus:outline-none"
+                    className="w-full px-4 py-3 rounded-xl border-2 border-gray-200 focus:border-purple-500 focus:outline-none text-gray-900"
                   />
 
                   {linkPreview && (
@@ -829,7 +826,7 @@ export default function TaskFeed() {
                               onChange={(e) =>
                                 setNewTask({ ...newTask, eventDate: e.target.value })
                               }
-                              className="w-full px-4 py-3 rounded-xl border-2 border-gray-200 focus:border-purple-500 focus:outline-none"
+                              className="w-full px-4 py-3 rounded-xl border-2 border-gray-200 focus:border-purple-500 focus:outline-none text-gray-900"
                             />
                           </div>
 
@@ -844,7 +841,7 @@ export default function TaskFeed() {
                               onChange={(e) =>
                                 setNewTask({ ...newTask, eventTime: e.target.value })
                               }
-                              className="w-full px-4 py-3 rounded-xl border-2 border-gray-200 focus:border-purple-500 focus:outline-none"
+                              className="w-full px-4 py-3 rounded-xl border-2 border-gray-200 focus:border-purple-500 focus:outline-none text-gray-900"
                             />
                           </div>
 
@@ -860,7 +857,7 @@ export default function TaskFeed() {
                               onChange={(e) =>
                                 setNewTask({ ...newTask, eventLocation: e.target.value })
                               }
-                              className="w-full px-4 py-3 rounded-xl border-2 border-gray-200 focus:border-purple-500 focus:outline-none"
+                              className="w-full px-4 py-3 rounded-xl border-2 border-gray-200 focus:border-purple-500 focus:outline-none text-gray-900 placeholder:text-gray-400"
                             />
                           </div>
                         </div>

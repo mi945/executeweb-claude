@@ -134,7 +134,7 @@ export default function ChallengeFriendModal({
                       placeholder="Search friends..."
                       value={searchQuery}
                       onChange={(e) => setSearchQuery(e.target.value)}
-                      className="w-full px-3 py-2 rounded-lg border border-gray-200 text-sm focus:border-purple-500 focus:outline-none"
+                      className="w-full px-3 py-2 rounded-lg border border-gray-200 text-sm text-gray-900 focus:border-purple-500 focus:outline-none"
                     />
                   </div>
 
@@ -222,7 +222,7 @@ export default function ChallengeFriendModal({
                         onChange={(e) => setMessage(e.target.value)}
                         maxLength={200}
                         rows={2}
-                        className="w-full px-3 py-2 rounded-lg border border-gray-200 text-sm focus:border-purple-500 focus:outline-none resize-none"
+                        className="w-full px-3 py-2 rounded-lg border border-gray-200 text-sm text-gray-900 focus:border-purple-500 focus:outline-none resize-none"
                       />
                       <p className="text-xs text-gray-400 text-right">{message.length}/200</p>
                     </motion.div>
