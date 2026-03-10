@@ -49,6 +49,10 @@ export type AnalyticsEvent =
   | 'tab_viewed'
   | 'page_viewed'
 
+  // Respect events
+  | 'respect_given'
+  | 'respect_removed'
+
   // Engagement events
   | 'comment_created'
   | 'external_link_clicked'
