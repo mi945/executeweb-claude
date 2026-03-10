@@ -332,16 +332,6 @@ export default function ActionCard({
                 <span className="text-xs text-gray-500">
                   {task.executions?.filter(e => e.completed).length || 0} done
                 </span>
-
-                {/* Respects Count */}
-                {totalRespects > 0 && (
-                  <span className="text-xs text-purple-600 font-semibold flex items-center gap-0.5">
-                    <svg className="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 20 20">
-                      <path d="M2 10.5a1.5 1.5 0 113 0v6a1.5 1.5 0 01-3 0v-6zM6 10.333v5.43a2 2 0 001.106 1.79l.05.025A4 4 0 008.943 18h5.416a2 2 0 001.962-1.608l1.2-6A2 2 0 0015.56 8H12V4a2 2 0 00-2-2 1 1 0 00-1 1v.667a4 4 0 01-.8 2.4L6.8 7.933a4 4 0 00-.8 2.4z" />
-                    </svg>
-                    {totalRespects}
-                  </span>
-                )}
               </div>
             )}
 
@@ -422,41 +412,33 @@ export default function ActionCard({
             </div>
           )}
 
-          {/* Respect Button - Only show if there are completions */}
-          {completedExecutions.length > 0 && (
-            <button
-              onClick={() => {
-                // Respect the most recent completion
-                const mostRecentCompletion = completedExecutions[0];
-                if (mostRecentCompletion && currentUserId) {
-                  toggleRespect(mostRecentCompletion.id, mostRecentCompletion.user?.id || '');
-                }
-              }}
-              disabled={!currentUserId}
-              className={`flex-1 flex items-center justify-center gap-1.5 py-2 text-xs transition-colors ${
-                currentUserRespected
-                  ? 'text-purple-600 font-semibold'
-                  : 'text-gray-500 hover:text-purple-600 hover:bg-gray-100/50'
-              }`}
+          {/* Respect Button - Like button for tasks */}
+          <button
+            onClick={() => toggleRespect(task.id)}
+            disabled={!currentUserId}
+            className={`flex-1 flex items-center justify-center gap-1.5 py-2 text-xs transition-colors ${
+              userHasRespected
+                ? 'text-purple-600 font-semibold'
+                : 'text-gray-500 hover:text-purple-600 hover:bg-gray-100/50'
+            }`}
+          >
+            <svg
+              className="w-3.5 h-3.5"
+              fill={userHasRespected ? 'currentColor' : 'none'}
+              stroke="currentColor"
+              viewBox="0 0 20 20"
             >
-              <svg
-                className="w-3.5 h-3.5"
-                fill={currentUserRespected ? 'currentColor' : 'none'}
-                stroke="currentColor"
-                viewBox="0 0 20 20"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={currentUserRespected ? 0 : 2}
-                  d="M2 10.5a1.5 1.5 0 113 0v6a1.5 1.5 0 01-3 0v-6zM6 10.333v5.43a2 2 0 001.106 1.79l.05.025A4 4 0 008.943 18h5.416a2 2 0 001.962-1.608l1.2-6A2 2 0 0015.56 8H12V4a2 2 0 00-2-2 1 1 0 00-1 1v.667a4 4 0 01-.8 2.4L6.8 7.933a4 4 0 00-.8 2.4z"
-                />
-              </svg>
-              <span>
-                {totalRespects > 0 ? `${totalRespects} ${totalRespects === 1 ? 'respect' : 'respects'}` : 'Respect'}
-              </span>
-            </button>
-          )}
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={userHasRespected ? 0 : 2}
+                d="M2 10.5a1.5 1.5 0 113 0v6a1.5 1.5 0 01-3 0v-6zM6 10.333v5.43a2 2 0 001.106 1.79l.05.025A4 4 0 008.943 18h5.416a2 2 0 001.962-1.608l1.2-6A2 2 0 0015.56 8H12V4a2 2 0 00-2-2 1 1 0 00-1 1v.667a4 4 0 01-.8 2.4L6.8 7.933a4 4 0 00-.8 2.4z"
+              />
+            </svg>
+            <span>
+              {respectCount > 0 ? `${respectCount} ${respectCount === 1 ? 'respect' : 'respects'}` : 'Respect'}
+            </span>
+          </button>
 
           {/* Proof Gallery Button - Only show if there are proofs */}
           {proofCount > 0 && (
