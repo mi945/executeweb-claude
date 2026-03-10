@@ -655,7 +655,7 @@ export default function TaskFeed() {
                     onChange={(e) =>
                       setNewTask({ ...newTask, description: e.target.value })
                     }
-                    className="w-full px-4 py-3 rounded-xl border-2 border-gray-200 focus:border-purple-500 focus:outline-none resize-none text-lg text-gray-900"
+                    className="w-full px-4 py-3 rounded-xl border-2 border-gray-200 focus:border-purple-500 focus:outline-none resize-none text-lg text-black font-medium"
                     rows={4}
                     required
                   />
