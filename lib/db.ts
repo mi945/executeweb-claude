@@ -57,6 +57,11 @@ const schema = i.schema({
       respondedAt: i.number().optional(),
       completedAt: i.number().optional(),
     }),
+
+    // Respects/kudos on executions (like Strava kudos)
+    respects: i.entity({
+      createdAt: i.number(),
+    }),
   },
   links: {
     // Task creator relationship (one-to-many)
@@ -224,6 +229,34 @@ const schema = i.schema({
         on: 'executions',
         has: 'one',
         label: 'challengeInvite',
+      },
+    },
+
+    // Respect from user (who gave the respect)
+    respectFromUser: {
+      forward: {
+        on: 'respects',
+        has: 'one',
+        label: 'fromUser',
+      },
+      reverse: {
+        on: 'profiles',
+        has: 'many',
+        label: 'givenRespects',
+      },
+    },
+
+    // Respect on execution (what completion was respected)
+    respectExecution: {
+      forward: {
+        on: 'respects',
+        has: 'one',
+        label: 'execution',
+      },
+      reverse: {
+        on: 'executions',
+        has: 'many',
+        label: 'respects',
       },
     },
   },
