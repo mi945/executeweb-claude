@@ -251,7 +251,7 @@ export default function ProofUploadModal({
                   </div>
 
                   {/* Upload Area */}
-                  {!imagePreview ? (
+                  {!imageToCrop && !imagePreview ? (
                     <div
                       onDragOver={handleDragOver}
                       onDragLeave={handleDragLeave}
@@ -266,7 +266,7 @@ export default function ProofUploadModal({
                       {isUploading ? (
                         <div className="text-green-600">
                           <div className="animate-spin mx-auto w-10 h-10 border-4 border-green-600 border-t-transparent rounded-full mb-2"></div>
-                          <p className="font-medium text-sm">Uploading...</p>
+                          <p className="font-medium text-sm">Loading image...</p>
                         </div>
                       ) : (
                         <>
@@ -300,7 +300,73 @@ export default function ProofUploadModal({
                         aria-label="Upload proof image"
                       />
                     </div>
-                  ) : (
+                  ) : null}
+
+                  {/* Cropping UI */}
+                  {imageToCrop && !imagePreview ? (
+                    <div className="space-y-3">
+                      <div className="bg-blue-50 border border-blue-200 rounded-lg p-2.5">
+                        <p className="text-xs text-blue-800 font-medium">
+                          Crop your image by dragging and pinching/zooming
+                        </p>
+                      </div>
+
+                      <div className="relative w-full h-64 bg-gray-900 rounded-xl overflow-hidden">
+                        <Cropper
+                          image={imageToCrop}
+                          crop={crop}
+                          zoom={zoom}
+                          aspect={4 / 3}
+                          onCropChange={setCrop}
+                          onZoomChange={setZoom}
+                          onCropComplete={onCropComplete}
+                        />
+                      </div>
+
+                      <div className="space-y-2">
+                        <label className="text-xs font-medium text-gray-700">Zoom</label>
+                        <input
+                          type="range"
+                          min={1}
+                          max={3}
+                          step={0.1}
+                          value={zoom}
+                          onChange={(e) => setZoom(Number(e.target.value))}
+                          className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-green-500"
+                        />
+                      </div>
+
+                      <div className="flex gap-3">
+                        <button
+                          onClick={handleCropCancel}
+                          disabled={isCropping}
+                          className="flex-1 py-2.5 px-4 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-xl font-semibold text-sm transition-all disabled:opacity-50"
+                        >
+                          Cancel
+                        </button>
+                        <button
+                          onClick={handleCropConfirm}
+                          disabled={isCropping}
+                          className="flex-1 py-2.5 px-4 bg-gradient-to-r from-green-500 to-emerald-500 text-white rounded-xl font-semibold text-sm hover:shadow-lg hover:scale-[1.02] transition-all disabled:opacity-50"
+                        >
+                          {isCropping ? (
+                            <span className="flex items-center justify-center gap-2">
+                              <svg className="animate-spin w-4 h-4" fill="none" viewBox="0 0 24 24">
+                                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                              </svg>
+                              Cropping...
+                            </span>
+                          ) : (
+                            'Confirm Crop'
+                          )}
+                        </button>
+                      </div>
+                    </div>
+                  ) : null}
+
+                  {/* Image Preview */}
+                  {imagePreview ? (
                     <div className="space-y-2">
                       {/* Image Preview */}
                       <div className="relative rounded-xl overflow-hidden border-2 border-green-200">
@@ -331,7 +397,7 @@ export default function ProofUploadModal({
                         Image ready to submit
                       </p>
                     </div>
-                  )}
+                  ) : null}
 
                   {/* Error Message */}
                   {error && (
