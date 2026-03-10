@@ -67,7 +67,6 @@ export default function ActionCard({
   showCelebration,
 }: ActionCardProps) {
   const [expanded, setExpanded] = useState(false);
-  const [showComments, setShowComments] = useState(true); // Auto-show comments
   const [showProofs, setShowProofs] = useState(false);
   const [selectedProof, setSelectedProof] = useState<string | null>(null);
 
@@ -388,12 +387,9 @@ export default function ActionCard({
             <span>Challenge a friend</span>
           </button>
 
-          {/* Comments Button - Only show if there are comments to hide/show */}
+          {/* Comment Count Display - Non-interactive */}
           {commentCount > 0 && (
-            <button
-              onClick={() => setShowComments(!showComments)}
-              className="flex-1 flex items-center justify-center gap-1.5 py-2 text-xs text-gray-500 hover:text-purple-600 hover:bg-gray-100/50 transition-colors"
-            >
+            <div className="flex-1 flex items-center justify-center gap-1.5 py-2 text-xs text-gray-500">
               <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path
                   strokeLinecap="round"
@@ -403,9 +399,9 @@ export default function ActionCard({
                 />
               </svg>
               <span>
-                {showComments ? 'Hide' : ''}{commentCount} {commentCount === 1 ? 'comment' : 'comments'}
+                {commentCount} {commentCount === 1 ? 'comment' : 'comments'}
               </span>
-            </button>
+            </div>
           )}
 
           {/* Proof Gallery Button - Only show if there are proofs */}
@@ -429,7 +425,8 @@ export default function ActionCard({
           )}
         </div>
 
-        {showComments && commentCount > 0 && (
+        {/* Comments Section - Always shown if comments exist */}
+        {commentCount > 0 && (
           <div className="px-4 pb-3 border-t border-gray-100">
             <TaskComments taskId={task.id} compact />
           </div>
