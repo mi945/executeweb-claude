@@ -35,7 +35,7 @@ interface Task {
   comments?: Array<{ id: string }>;
   respects?: Array<{
     id: string;
-    fromUser?: { id: string };
+    fromUser?: { id: string; name?: string; profileImage?: string; avatarColor?: string };
   }>;
 }
 
@@ -75,6 +75,7 @@ export default function ActionCard({
   const [expanded, setExpanded] = useState(false);
   const [showProofs, setShowProofs] = useState(false);
   const [selectedProof, setSelectedProof] = useState<string | null>(null);
+  const [showRespecters, setShowRespecters] = useState(false);
 
   // Comment count from task data (loaded by parent query)
   const commentCount = task.comments?.length || 0;
