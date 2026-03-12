@@ -43,7 +43,7 @@ export default function ActionDrawer() {
   } = useChallengeInvites();
 
   // Get user's profile with their executions and task creators
-  const { data } = db.useQuery({
+  const { data, isLoading } = db.useQuery({
     profiles: {
       $: {
         where: { id: user?.id || '' },
