@@ -373,7 +373,7 @@ export default function ActionCard({
 
           {/* Respect Button - Like button for tasks */}
           <button
-            onClick={() => toggleRespect(task.id)}
+            onClick={() => onToggleRespect?.(task.id)}
             disabled={!currentUserId}
             className={`flex-1 flex items-center justify-center gap-1.5 py-2 text-xs transition-colors ${
               userHasRespected
@@ -422,7 +422,7 @@ export default function ActionCard({
 
         {/* Comments Section - Always shown */}
         <div className="px-4 pb-3 border-t border-gray-100">
-          <TaskComments taskId={task.id} compact />
+          <TaskComments taskId={task.id} compact userProfile={userProfile} />
         </div>
 
         {/* Proof Gallery */}

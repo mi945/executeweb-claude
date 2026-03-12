@@ -26,9 +26,15 @@ interface Comment {
 interface TaskCommentsProps {
   taskId: string;
   compact?: boolean;
+  userProfile?: {
+    id: string;
+    name: string;
+    profileImage?: string;
+    avatarColor?: string;
+  } | null;
 }
 
-export default function TaskComments({ taskId, compact = false }: TaskCommentsProps) {
+export default function TaskComments({ taskId, compact = false, userProfile: userProfileProp }: TaskCommentsProps) {
   const { user } = db.useAuth();
   const [commentText, setCommentText] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
