@@ -14,6 +14,7 @@ interface Task {
   imageUrl?: string;
   externalLink?: string;
   createdAt: number;
+  editedAt?: number;
   eventDate?: string;
   eventTime?: string;
   eventLocation?: string;
@@ -52,6 +53,8 @@ interface ActionCardProps {
   onRevert?: (executionId: string) => void;
   onChallengeFriend?: (task: Task) => void;
   onToggleRespect?: (taskId: string) => void;
+  onEditTask?: (task: Task) => void;
+  onDeleteTask?: (task: Task) => void;
   isExecuting: boolean;
   isCompleting?: boolean;
   onClick?: (task: Task) => void;
