@@ -262,9 +262,11 @@ export default function ActionDrawer() {
                     {invite.task?.title || 'Unknown Task'}
                   </h3>
                   {invite.task?.description && (
-                    <p className="text-sm text-gray-600 line-clamp-2 mb-2">
-                      {invite.task.description}
-                    </p>
+                    <FormattedDescription
+                      text={invite.task.description}
+                      className="text-sm text-gray-600 mb-2"
+                      clamp
+                    />
                   )}
 
                   {/* Message */}
@@ -361,9 +363,10 @@ export default function ActionDrawer() {
                     <h3 className="text-xl font-bold text-gray-900 mb-1">
                       {execution.task?.title || 'Untitled Task'}
                     </h3>
-                    <p className="text-gray-600 text-sm">
-                      {execution.task?.description || 'No description'}
-                    </p>
+                    <FormattedDescription
+                      text={execution.task?.description || 'No description'}
+                      className="text-gray-600 text-sm"
+                    />
                   </div>
 
                   <button
@@ -409,9 +412,10 @@ export default function ActionDrawer() {
                     <h3 className="text-xl font-bold text-gray-900 line-through mb-1">
                       {execution.task?.title || 'Untitled Task'}
                     </h3>
-                    <p className="text-gray-600 text-sm line-through">
-                      {execution.task?.description || 'No description'}
-                    </p>
+                    <FormattedDescription
+                      text={execution.task?.description || 'No description'}
+                      className="text-gray-600 text-sm line-through"
+                    />
                     <p className="text-xs text-gray-400 mt-2">
                       Completed {new Date(execution.completedAt || 0).toLocaleDateString()}
                     </p>
