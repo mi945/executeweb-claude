@@ -75,17 +75,8 @@ export default function ActionCard({
   const [showProofs, setShowProofs] = useState(false);
   const [selectedProof, setSelectedProof] = useState<string | null>(null);
 
-  // Query comments for this task
-  const { data: commentsData } = db.useQuery({
-    comments: {
-      task: {},
-    },
-  });
-
-  // Count comments for this task
-  const commentCount = (commentsData?.comments || []).filter(
-    (c: any) => c.task?.id === task.id
-  ).length;
+  // Comment count from task data (loaded by parent query)
+  const commentCount = task.comments?.length || 0;
 
   // Check execution status for current user
   const userExecution = task.executions?.find((e) => e.user?.id === currentUserId);
@@ -93,19 +84,9 @@ export default function ActionCard({
   const hasCompleted = userExecution?.completed ?? false;
   const executionId = userExecution?.id;
 
-  // Use presence for this task
-  const { activePresences } = useTaskPresence({
-    taskId: task.id,
-    userProfile,
-    isExecuting: hasExecuted && !hasCompleted,
-  });
-
-  // Use respect hook
-  const { getRespectCount, toggleRespect, hasRespected } = useRespect();
-
-  // Get respect data for this task
-  const respectCount = getRespectCount(task.id);
-  const userHasRespected = hasRespected(task.id);
+  // Respect data from task data (loaded by parent query)
+  const respectCount = task.respects?.length || 0;
+  const userHasRespected = task.respects?.some(r => r.fromUser?.id === currentUserId) || false;
 
   // Determine if description needs expansion (shorter threshold for compact)
   const descriptionNeedsExpansion = task.description.length > 100;
@@ -290,30 +271,6 @@ export default function ActionCard({
         {/* Action Row: Presence + Stats + Execute Button */}
         <div className="flex items-center justify-between gap-3">
           <div className="flex items-center gap-3 min-w-0">
-            {/* Active Users Presence */}
-            {activePresences.length > 0 && (
-              <div className="flex items-center gap-1.5">
-                <div className="flex -space-x-1.5">
-                  {activePresences.slice(0, 3).map((user, i) => (
-                    <div
-                      key={user.peerId}
-                      style={{ zIndex: 3 - i }}
-                      className="w-5 h-5 rounded-full border-2 border-white bg-gradient-to-br from-purple-400 to-blue-500 flex items-center justify-center text-white text-[10px] font-bold"
-                    >
-                      {user.odocAvatar ? (
-                        <img src={user.odocAvatar} className="w-full h-full rounded-full object-cover" />
-                      ) : (
-                        user.odocName?.charAt(0).toUpperCase() || '?'
-                      )}
-                    </div>
-                  ))}
-                </div>
-                <span className="text-xs text-gray-500">
-                  {activePresences.length} active
-                </span>
-              </div>
-            )}
-
             {/* Completers (Wall of Fame inline) */}
             {completers.length > 0 && (
               <div className="flex items-center gap-1.5">
