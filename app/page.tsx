@@ -90,17 +90,7 @@ export default function Home() {
 
   useEffect(() => {
     if (data?.executions) {
-      // Get start of today in milliseconds
-      const today = new Date();
-      today.setHours(0, 0, 0, 0);
-      const todayStart = today.getTime();
-
-      // Filter executions completed today
-      const completedToday = (data.executions as any[]).filter(
-        (e) => e.completed && e.completedAt && e.completedAt >= todayStart
-      );
-
-      setTodayCompletions(completedToday.length);
+      setTodayCompletions((data.executions as any[]).length);
     }
   }, [data]);
 
