@@ -10,11 +10,16 @@ export default function UserProfile() {
   // Get user's profile
   const { data } = db.useQuery({
     profiles: {
+      $: {
+        where: {
+          id: user?.id || '',
+        },
+      },
       executions: {},
     },
   });
 
-  const userProfile = data?.profiles?.find((p: any) => p.id === user?.id);
+  const userProfile = data?.profiles?.[0];
 
   // Count completed executions
   const completedCount =

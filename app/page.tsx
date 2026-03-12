@@ -34,13 +34,19 @@ export default function Home() {
   // Check if user is admin
   const isAdmin = user?.email && ADMIN_EMAILS.includes(user.email);
 
-  // Query all executions to calculate today's completions
+  // Query executions for today's completions count, and current user's profile
   const { data } = db.useQuery({
-    executions: {},
+    executions: {
+      $: {
+        where: {
+          completed: true,
+        },
+      },
+    },
     profiles: {
       $: {
         where: {
-          id: user?.id,
+          id: user?.id || '',
         },
       },
     },
