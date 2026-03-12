@@ -5,6 +5,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import db from '@/lib/db';
 import CreatorMetadata from './CreatorMetadata';
 import ProofUploadModal from './ProofUploadModal';
+import FormattedDescription from './FormattedDescription';
 import { useChallengeInvites } from '@/hooks/useChallengeInvites';
 
 interface Execution {

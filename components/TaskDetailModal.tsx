@@ -3,6 +3,7 @@
 import { motion, AnimatePresence } from 'framer-motion';
 import { getRelativeTime } from '@/lib/time';
 import { useEffect, useState } from 'react';
+import FormattedDescription from './FormattedDescription';
 
 interface Task {
   id: string;
@@ -197,9 +198,10 @@ export default function TaskDetailModal({ task, isOpen, onClose, activeUsers = [
 
                 {/* Description */}
                 <div className="prose prose-lg max-w-none">
-                  <p className="text-gray-700 text-lg leading-relaxed whitespace-pre-wrap">
-                    {task.description}
-                  </p>
+                  <FormattedDescription
+                    text={task.description}
+                    className="text-gray-700 text-lg leading-relaxed"
+                  />
                 </div>
 
                 {/* Divider */}
