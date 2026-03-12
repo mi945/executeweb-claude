@@ -44,6 +44,9 @@ export default function ActionDrawer() {
   // Get user's profile with their executions and task creators
   const { data } = db.useQuery({
     profiles: {
+      $: {
+        where: { id: user?.id || '' },
+      },
       executions: {
         task: {
           creator: {},
@@ -52,7 +55,7 @@ export default function ActionDrawer() {
     },
   });
 
-  const userProfile = data?.profiles?.find((p: any) => p.id === user?.id);
+  const userProfile = data?.profiles?.[0];
 
   // Filter executions to only include those with valid task data
   const allExecutions = (userProfile?.executions || []) as any[];
