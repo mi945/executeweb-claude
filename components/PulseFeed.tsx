@@ -90,6 +90,28 @@ export default function PulseFeed() {
     return daysLeft;
   };
 
+  if (isLoading) {
+    return (
+      <div className="space-y-6">
+        <h2 className="text-2xl font-bold text-gray-900">The Pulse</h2>
+        <div className="space-y-3">
+          {[1, 2, 3, 4].map((i) => (
+            <div key={i} className="bg-white rounded-xl shadow-sm p-4 animate-pulse">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-full bg-gray-200" />
+                <div className="flex-1">
+                  <div className="h-4 w-32 bg-gray-200 rounded mb-1.5" />
+                  <div className="h-3 w-48 bg-gray-100 rounded" />
+                </div>
+                <div className="h-3 w-12 bg-gray-100 rounded" />
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6">
       <h2 className="text-2xl font-bold text-gray-900">The Pulse</h2>

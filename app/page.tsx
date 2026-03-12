@@ -35,7 +35,7 @@ export default function Home() {
   const isAdmin = user?.email && ADMIN_EMAILS.includes(user.email);
 
   // Query executions for today's completions count, and current user's profile
-  const { data } = db.useQuery({
+  const { data, isLoading: isLoadingData } = db.useQuery({
     executions: {
       $: {
         where: {
@@ -239,9 +239,13 @@ export default function Home() {
                   <div className="space-y-3">
                     <div className="flex items-center justify-between">
                       <span className="text-gray-600">Global Completions</span>
-                      <span className="font-bold text-purple-600 text-2xl">
-                        {todayCompletions}
-                      </span>
+                      {isLoadingData ? (
+                        <div className="h-8 w-10 bg-gray-200 rounded animate-pulse" />
+                      ) : (
+                        <span className="font-bold text-purple-600 text-2xl">
+                          {todayCompletions}
+                        </span>
+                      )}
                     </div>
                   </div>
                 </div>
