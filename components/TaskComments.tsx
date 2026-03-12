@@ -55,8 +55,14 @@ export default function TaskComments({ taskId, compact = false, userProfile: use
       },
       comments: {
         author: {},
+        likes: {
+          fromUser: {},
+        },
         replies: {
           author: {},
+          likes: {
+            fromUser: {},
+          },
         },
         parentComment: {},
       },
@@ -147,6 +153,24 @@ export default function TaskComments({ taskId, compact = false, userProfile: use
     });
   };
 
+  const handleToggleLike = async (comment: Comment) => {
+    if (!user?.id) return;
+    const existingLike = comment.likes?.find((l) => l.fromUser?.id === user.id);
+
+    if (existingLike) {
+      await db.transact([db.tx.commentLikes[existingLike.id].delete()]);
+      trackEvent('comment_like_removed', { commentId: comment.id });
+    } else {
+      const likeId = id();
+      await db.transact([
+        db.tx.commentLikes[likeId].update({ createdAt: Date.now() }),
+        db.tx.comments[comment.id].link({ likes: likeId }),
+        db.tx.profiles[user.id].link({ givenCommentLikes: likeId }),
+      ]);
+      trackEvent('comment_like_given', { commentId: comment.id });
+    }
+  };
+
   const getTimeAgo = (timestamp: number) => {
     const seconds = Math.floor((Date.now() - timestamp) / 1000);
 
@@ -171,6 +195,8 @@ export default function TaskComments({ taskId, compact = false, userProfile: use
     const threadExpanded = expandedThreads.has(comment.id);
     const replyCount = comment.replies?.length || 0;
     const displayedReplies = threadExpanded ? comment.replies : comment.replies?.slice(0, 2);
+    const likeCount = comment.likes?.length || 0;
+    const userHasLiked = comment.likes?.some((l) => l.fromUser?.id === user?.id) || false;
 
     return (
       <div className={isReply ? 'relative' : ''}>
