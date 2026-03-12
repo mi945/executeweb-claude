@@ -57,12 +57,16 @@ export function useChallengeInvites() {
 
   // Get current user's profile
   const { data: profileData } = db.useQuery({
-    profiles: {},
+    profiles: {
+      $: {
+        where: { id: user?.id || '' },
+      },
+    },
   });
 
   const myProfile = useMemo(
-    () => profileData?.profiles?.find((p: any) => p.id === user?.id),
-    [profileData, user?.id]
+    () => profileData?.profiles?.[0],
+    [profileData]
   );
 
   const allInvites = (data?.challengeInvites || []) as ChallengeInvite[];
