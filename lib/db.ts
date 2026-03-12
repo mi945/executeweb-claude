@@ -33,6 +33,7 @@ const schema = i.schema({
       avatarColor: i.string().optional(),
       dailyStreak: i.number(),
       lastCompletionDate: i.number().optional(),
+      createdAt: i.number().optional(),
     }),
 
     // Comments on tasks
