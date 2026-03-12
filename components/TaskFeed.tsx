@@ -101,7 +101,7 @@ export default function TaskFeed() {
   }, [newTask.imageUrl]);
 
   // Query all tasks with their executions, creator, comments, and respects
-  const { data } = db.useQuery({
+  const { data, isLoading: isLoadingTasks } = db.useQuery({
     tasks: {
       creator: {},
       executions: {
