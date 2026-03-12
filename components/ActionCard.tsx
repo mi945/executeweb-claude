@@ -50,6 +50,7 @@ interface ActionCardProps {
   onComplete?: (executionId: string) => void;
   onRevert?: (executionId: string) => void;
   onChallengeFriend?: (task: Task) => void;
+  onToggleRespect?: (taskId: string) => void;
   isExecuting: boolean;
   isCompleting?: boolean;
   onClick?: (task: Task) => void;
@@ -64,6 +65,7 @@ export default function ActionCard({
   onComplete,
   onRevert,
   onChallengeFriend,
+  onToggleRespect,
   isExecuting,
   isCompleting,
   onClick,
