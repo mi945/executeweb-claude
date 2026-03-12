@@ -62,6 +62,11 @@ const schema = i.schema({
     respects: i.entity({
       createdAt: i.number(),
     }),
+
+    // Likes on comments
+    commentLikes: i.entity({
+      createdAt: i.number(),
+    }),
   },
   links: {
     // Task creator relationship (one-to-many)
@@ -257,6 +262,34 @@ const schema = i.schema({
         on: 'tasks',
         has: 'many',
         label: 'respects',
+      },
+    },
+
+    // Comment like from user (who liked the comment)
+    commentLikeFromUser: {
+      forward: {
+        on: 'commentLikes',
+        has: 'one',
+        label: 'fromUser',
+      },
+      reverse: {
+        on: 'profiles',
+        has: 'many',
+        label: 'givenCommentLikes',
+      },
+    },
+
+    // Comment like on comment (which comment was liked)
+    commentLikeComment: {
+      forward: {
+        on: 'commentLikes',
+        has: 'one',
+        label: 'comment',
+      },
+      reverse: {
+        on: 'comments',
+        has: 'many',
+        label: 'likes',
       },
     },
   },

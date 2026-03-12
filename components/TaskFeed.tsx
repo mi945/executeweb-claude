@@ -40,7 +40,7 @@ interface Task {
   comments?: Array<{ id: string }>;
   respects?: Array<{
     id: string;
-    fromUser?: { id: string };
+    fromUser?: { id: string; name?: string; profileImage?: string; avatarColor?: string };
   }>;
 }
 

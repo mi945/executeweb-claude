@@ -55,6 +55,8 @@ export type AnalyticsEvent =
 
   // Engagement events
   | 'comment_created'
+  | 'comment_like_given'
+  | 'comment_like_removed'
   | 'external_link_clicked'
   | 'pulse_viewed'
   | 'collective_moment_viewed'
