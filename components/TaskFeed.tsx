@@ -537,6 +537,98 @@ export default function TaskFeed() {
     }
   };
 
+  // Edit task handlers
+  const handleEditTask = (task: Task) => {
+    setEditingTask(task);
+    setIsEditModalOpen(true);
+  };
+
+  const handleSaveTaskEdit = async (fields: {
+    title: string;
+    description: string;
+    imageUrl?: string;
+    externalLink?: string;
+    eventDate?: string;
+    eventTime?: string;
+    eventLocation?: string;
+  }) => {
+    if (!editingTask) return;
+    setIsSavingEdit(true);
+    try {
+      await db.transact([
+        db.tx.tasks[editingTask.id].update({
+          ...fields,
+          editedAt: Date.now(),
+        }),
+      ]);
+      trackEvent('task_edited', { taskId: editingTask.id });
+      setIsEditModalOpen(false);
+      setEditingTask(null);
+    } catch (err: any) {
+      alert('Error saving changes: ' + err.message);
+    } finally {
+      setIsSavingEdit(false);
+    }
+  };
+
+  // Delete task handlers
+  const handleDeleteTask = (task: Task) => {
+    setDeletingTask(task);
+    setIsDeleteModalOpen(true);
+  };
+
+  const handleConfirmDeleteTask = async () => {
+    if (!deletingTask) return;
+    setIsDeletingTask(true);
+    try {
+      const transactions: any[] = [];
+
+      // Delete comment likes first, then comments
+      const taskComments = (deletingTask as any).comments || [];
+      for (const comment of taskComments) {
+        const commentLikes = comment.likes || [];
+        for (const like of commentLikes) {
+          transactions.push(db.tx.commentLikes[like.id].delete());
+        }
+        transactions.push(db.tx.comments[comment.id].delete());
+      }
+
+      // Delete respects
+      const taskRespects = deletingTask.respects || [];
+      for (const respect of taskRespects) {
+        transactions.push(db.tx.respects[respect.id].delete());
+      }
+
+      // Delete challenge invites (and their linked executions)
+      const taskChallenges = deletingTask.challengeInvites || [];
+      for (const challenge of taskChallenges) {
+        if (challenge.execution?.id) {
+          transactions.push(db.tx.executions[challenge.execution.id].delete());
+        }
+        transactions.push(db.tx.challengeInvites[challenge.id].delete());
+      }
+
+      // Delete the task itself (executions are preserved/orphaned)
+      transactions.push(db.tx.tasks[deletingTask.id].delete());
+
+      await db.transact(transactions);
+      trackEvent('task_deleted', { taskId: deletingTask.id });
+
+      // Close modal if viewing this task
+      if (selectedTask?.id === deletingTask.id) {
+        setIsModalOpen(false);
+        setSelectedTask(null);
+      }
+
+      setIsDeleteModalOpen(false);
+      setDeletingTask(null);
+    } catch (err: any) {
+      alert('Error deleting challenge: ' + err.message);
+    } finally {
+      setIsDeletingTask(false);
+    }
+  };
+
   const toggleCardExpansion = (taskId: string) => {
     setExpandedCards((prev) => {
       const newSet = new Set(prev);
@@ -1019,6 +1111,8 @@ export default function TaskFeed() {
                   onRevert={handleRevert}
                   onChallengeFriend={handleChallengeFriend}
                   onToggleRespect={handleToggleRespect}
+                  onEditTask={handleEditTask}
+                  onDeleteTask={handleDeleteTask}
                   isExecuting={executingTaskId === task.id}
                   isCompleting={isCompleting}
                   showCelebration={showCelebration}
@@ -1074,6 +1168,28 @@ export default function TaskFeed() {
           setPendingExecutionId(null);
           setPendingTaskTitle('');
         }}
+      />
+
+      {/* Edit Task Modal */}
+      <EditTaskModal
+        isOpen={isEditModalOpen}
+        onClose={() => { setIsEditModalOpen(false); setEditingTask(null); }}
+        onSave={handleSaveTaskEdit}
+        task={editingTask}
+        hasExecutions={(editingTask?.executions?.length || 0) > 0}
+        isSaving={isSavingEdit}
+      />
+
+      {/* Delete Confirmation Modal */}
+      <ConfirmDeleteModal
+        isOpen={isDeleteModalOpen}
+        onClose={() => { setIsDeleteModalOpen(false); setDeletingTask(null); }}
+        onConfirm={handleConfirmDeleteTask}
+        title={deletingTask?.title || ''}
+        commentCount={deletingTask?.comments?.length || 0}
+        respectCount={deletingTask?.respects?.length || 0}
+        inviteCount={deletingTask?.challengeInvites?.length || 0}
+        isDeleting={isDeletingTask}
       />
     </div>
   );
