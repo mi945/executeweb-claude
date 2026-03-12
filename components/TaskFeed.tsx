@@ -13,6 +13,7 @@ import { useTaskPresence } from '@/hooks/useTaskPresence';
 import { useChallengeInvites } from '@/hooks/useChallengeInvites';
 import { trackEvent } from '@/lib/analytics';
 import { compressImage, isValidImageFile, MAX_RAW_FILE_SIZE } from '@/lib/imageUtils';
+import FormattedDescription from './FormattedDescription';
 
 interface Task {
   id: string;
@@ -594,9 +595,11 @@ export default function TaskFeed() {
           <h3 className="text-2xl font-bold text-gray-900 mb-2">
             {newTask.title || 'Your Task Title'}
           </h3>
-          <p className="text-gray-600 mb-4">
-            {newTask.description || 'Your task description will appear here...'}
-          </p>
+          {newTask.description ? (
+            <FormattedDescription text={newTask.description} className="text-gray-600 mb-4" />
+          ) : (
+            <p className="text-gray-600 mb-4">Your task description will appear here...</p>
+          )}
 
           {linkPreview && (
             <div className="mb-4">
