@@ -28,7 +28,7 @@ export default function AdminDashboard() {
   }, [user, router]);
 
   // Query all data from InstantDB
-  const { data } = db.useQuery({
+  const { data, error: queryError } = db.useQuery({
     profiles: {},
     tasks: {
       creator: {},
@@ -45,8 +45,8 @@ export default function AdminDashboard() {
   });
 
   useEffect(() => {
-    if (data) setLoading(false);
-  }, [data]);
+    if (data || queryError) setLoading(false);
+  }, [data, queryError]);
 
   // Redirect if not logged in
   useEffect(() => {
@@ -231,6 +231,23 @@ export default function AdminDashboard() {
           <p className="text-gray-600">
             {!isAuthorized && user ? 'Access denied...' : 'Loading analytics...'}
           </p>
+        </div>
+      </div>
+    );
+  }
+
+  if (queryError) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-purple-50 to-blue-50 flex items-center justify-center">
+        <div className="text-center max-w-md">
+          <p className="text-red-600 font-semibold mb-2">Error loading data</p>
+          <p className="text-gray-600 text-sm mb-4">{queryError.message}</p>
+          <button
+            onClick={() => router.push('/')}
+            className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700"
+          >
+            Back to Home
+          </button>
         </div>
       </div>
     );
