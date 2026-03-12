@@ -42,27 +42,26 @@ export default function TaskComments({ taskId, compact = false, userProfile: use
   const [expandedThreads, setExpandedThreads] = useState<Set<string>>(new Set());
   const [replyingTo, setReplyingTo] = useState<{ commentId: string; authorName: string; isLevel1: boolean } | null>(null);
 
-  // Query comments with nested replies and authors
+  // Query comments for this specific task with nested replies and authors
   const { data } = db.useQuery({
-    comments: {
-      task: {},
-      author: {},
-      replies: {
-        author: {},
+    tasks: {
+      $: {
+        where: { id: taskId },
       },
-      parentComment: {},
+      comments: {
+        author: {},
+        replies: {
+          author: {},
+        },
+        parentComment: {},
+      },
     },
   });
 
-  // Get user's profile
-  const { data: profileData } = db.useQuery({
-    profiles: {},
-  });
+  const userProfile = userProfileProp;
 
-  const userProfile = profileData?.profiles?.find((p: any) => p.id === user?.id);
-
-  // Filter and organize comments for this specific task
-  const allComments = ((data?.comments || []) as any[]).filter((c) => c.task?.id === taskId);
+  // Get comments from the task-scoped query
+  const allComments = ((data?.tasks?.[0]?.comments || []) as any[]);
 
   // Separate parent comments from replies with smart relevance sorting
   const parentComments = allComments
