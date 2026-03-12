@@ -216,6 +216,34 @@ export default function ActionDrawer() {
     (c) => c.status === 'completed'
   ).slice(0, 5);
 
+  if (isLoading) {
+    return (
+      <div className="space-y-6">
+        <div>
+          <div className="h-8 w-56 bg-gray-200 rounded mb-4 animate-pulse" />
+          <div className="space-y-3">
+            {[1, 2].map((i) => (
+              <div key={i} className="bg-white rounded-xl shadow-md p-5 animate-pulse">
+                <div className="flex items-start justify-between">
+                  <div className="flex-1">
+                    <div className="flex items-center gap-2 mb-2">
+                      <div className="w-6 h-6 rounded-full bg-gray-200" />
+                      <div className="h-3 w-20 bg-gray-200 rounded" />
+                    </div>
+                    <div className="h-5 w-48 bg-gray-200 rounded mb-2" />
+                    <div className="h-3 w-full bg-gray-100 rounded mb-1" />
+                    <div className="h-3 w-2/3 bg-gray-100 rounded" />
+                  </div>
+                  <div className="ml-4 h-9 w-24 bg-gray-200 rounded-xl" />
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6">
       {/* Incoming Challenges */}

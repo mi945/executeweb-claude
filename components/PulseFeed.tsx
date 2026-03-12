@@ -27,7 +27,7 @@ export default function PulseFeed() {
   const [selectedProof, setSelectedProof] = useState<Completion | null>(null);
 
   // Query all completed executions
-  const { data } = db.useQuery({
+  const { data, isLoading } = db.useQuery({
     executions: {
       task: {},
       user: {},
