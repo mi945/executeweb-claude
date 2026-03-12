@@ -953,36 +953,61 @@ export default function TaskFeed() {
       </AnimatePresence>
 
       {/* Task Cards - Single Column Layout */}
-      <motion.div layout className="flex flex-col gap-4 max-w-xl mx-auto">
-        <AnimatePresence>
-          {tasks.map((task) => {
-            // Find if this task has an execution being completed
-            const userExecution = task.executions?.find(e => e.user?.id === user?.id);
-            const isCompleting = userExecution?.id === completingExecutionId;
-            const showCelebration = task.id === celebratingTaskId;
+      {isLoadingTasks ? (
+        <div className="flex flex-col gap-4 max-w-xl mx-auto">
+          {[1, 2, 3].map((i) => (
+            <div key={i} className="bg-white rounded-lg shadow-sm border border-gray-100 overflow-hidden animate-pulse">
+              <div className="p-4">
+                <div className="flex items-center gap-2 mb-3">
+                  <div className="w-6 h-6 rounded-full bg-gray-200" />
+                  <div className="h-3 w-20 bg-gray-200 rounded" />
+                  <div className="h-3 w-10 bg-gray-100 rounded" />
+                </div>
+                <div className="h-5 w-3/4 bg-gray-200 rounded mb-2" />
+                <div className="space-y-1.5 mb-3">
+                  <div className="h-3 w-full bg-gray-100 rounded" />
+                  <div className="h-3 w-2/3 bg-gray-100 rounded" />
+                </div>
+                <div className="flex items-center justify-between">
+                  <div className="h-3 w-16 bg-gray-100 rounded" />
+                  <div className="h-8 w-24 bg-gray-200 rounded-full" />
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      ) : (
+        <motion.div layout className="flex flex-col gap-4 max-w-xl mx-auto">
+          <AnimatePresence>
+            {tasks.map((task) => {
+              // Find if this task has an execution being completed
+              const userExecution = task.executions?.find(e => e.user?.id === user?.id);
+              const isCompleting = userExecution?.id === completingExecutionId;
+              const showCelebration = task.id === celebratingTaskId;
 
-            return (
-              <ActionCard
-                key={task.id}
-                task={task}
-                userProfile={userProfile || null}
-                currentUserId={user?.id}
-                onExecute={handleExecute}
-                onComplete={handleComplete}
-                onRevert={handleRevert}
-                onChallengeFriend={handleChallengeFriend}
-                onToggleRespect={handleToggleRespect}
-                isExecuting={executingTaskId === task.id}
-                isCompleting={isCompleting}
-                showCelebration={showCelebration}
-                onClick={handleCardClick}
-              />
-            );
-          })}
-        </AnimatePresence>
-      </motion.div>
+              return (
+                <ActionCard
+                  key={task.id}
+                  task={task}
+                  userProfile={userProfile || null}
+                  currentUserId={user?.id}
+                  onExecute={handleExecute}
+                  onComplete={handleComplete}
+                  onRevert={handleRevert}
+                  onChallengeFriend={handleChallengeFriend}
+                  onToggleRespect={handleToggleRespect}
+                  isExecuting={executingTaskId === task.id}
+                  isCompleting={isCompleting}
+                  showCelebration={showCelebration}
+                  onClick={handleCardClick}
+                />
+              );
+            })}
+          </AnimatePresence>
+        </motion.div>
+      )}
 
-      {tasks.length === 0 && !showCreateForm && (
+      {tasks.length === 0 && !isLoadingTasks && !showCreateForm && (
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
