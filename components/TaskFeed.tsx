@@ -8,6 +8,8 @@ import ActionCard from './ActionCard';
 import TaskDetailModal from './TaskDetailModal';
 import ChallengeFriendModal from './ChallengeFriendModal';
 import ProofUploadModal from './ProofUploadModal';
+import EditTaskModal from './EditTaskModal';
+import ConfirmDeleteModal from './ConfirmDeleteModal';
 import Toast from './Toast';
 import { useTaskPresence } from '@/hooks/useTaskPresence';
 import { useChallengeInvites } from '@/hooks/useChallengeInvites';
@@ -22,6 +24,7 @@ interface Task {
   imageUrl?: string;
   externalLink?: string;
   createdAt: number;
+  editedAt?: number;
   eventDate?: string;
   eventTime?: string;
   eventLocation?: string;
@@ -37,10 +40,17 @@ interface Task {
     completed: boolean;
     completedAt?: number;
   }>;
-  comments?: Array<{ id: string }>;
+  comments?: Array<{
+    id: string;
+    likes?: Array<{ id: string }>;
+  }>;
   respects?: Array<{
     id: string;
     fromUser?: { id: string; name?: string; profileImage?: string; avatarColor?: string };
+  }>;
+  challengeInvites?: Array<{
+    id: string;
+    execution?: { id: string };
   }>;
 }
 
@@ -77,6 +87,14 @@ export default function TaskFeed() {
   const [lastCompletedExecutionId, setLastCompletedExecutionId] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  // Edit/Delete state
+  const [editingTask, setEditingTask] = useState<Task | null>(null);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [isSavingEdit, setIsSavingEdit] = useState(false);
+  const [deletingTask, setDeletingTask] = useState<Task | null>(null);
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [isDeletingTask, setIsDeletingTask] = useState(false);
+
   // Extract link metadata
   const [linkPreview, setLinkPreview] = useState<{ domain: string; url: string } | null>(null);
 
@@ -107,9 +125,14 @@ export default function TaskFeed() {
       executions: {
         user: {},
       },
-      comments: {},
+      comments: {
+        likes: {},
+      },
       respects: {
         fromUser: {},
+      },
+      challengeInvites: {
+        execution: {},
       },
     },
   });
