@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useRef, useCallback } from 'react';
+import { useState, useRef, useCallback, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import Cropper from 'react-easy-crop';
 import type { Area, Point } from 'react-easy-crop';
@@ -202,6 +202,13 @@ export default function ProofUploadModal({
       fileInputRef.current.value = '';
     }
   };
+
+  // Reset all state when the modal opens to prevent stale data from previous use
+  useEffect(() => {
+    if (isOpen) {
+      resetState();
+    }
+  }, [isOpen]);
 
   return (
     <AnimatePresence>
