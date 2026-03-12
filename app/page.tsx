@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import db from '@/lib/db';
 import AuthForm from '@/components/AuthForm';
@@ -34,12 +34,20 @@ export default function Home() {
   // Check if user is admin
   const isAdmin = user?.email && ADMIN_EMAILS.includes(user.email);
 
-  // Query executions for today's completions count, and current user's profile
+  // Compute start of today once per day (stable reference for query)
+  const todayStart = useMemo(() => {
+    const d = new Date();
+    d.setHours(0, 0, 0, 0);
+    return d.getTime();
+  }, []);
+
+  // Query only today's completed executions (instead of ALL executions), and current user's profile
   const { data, isLoading: isLoadingData } = db.useQuery({
     executions: {
       $: {
         where: {
           completed: true,
+          completedAt: { $gt: todayStart },
         },
       },
     },
