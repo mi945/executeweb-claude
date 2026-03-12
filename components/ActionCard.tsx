@@ -372,33 +372,50 @@ export default function ActionCard({
             </span>
           </div>
 
-          {/* Respect Button - Like button for tasks */}
-          <button
-            onClick={() => onToggleRespect?.(task.id)}
-            disabled={!currentUserId}
+          {/* Respect Button - Split: icon toggles, count opens list */}
+          <div
             className={`flex-1 flex items-center justify-center gap-1.5 py-2 text-xs transition-colors ${
               userHasRespected
                 ? 'text-purple-600 font-semibold'
-                : 'text-gray-500 hover:text-purple-600 hover:bg-gray-100/50'
+                : 'text-gray-500'
             }`}
           >
-            <svg
-              className="w-3.5 h-3.5"
-              fill={userHasRespected ? 'currentColor' : 'none'}
-              stroke="currentColor"
-              viewBox="0 0 20 20"
+            <button
+              onClick={() => onToggleRespect?.(task.id)}
+              disabled={!currentUserId}
+              className="hover:text-purple-600 hover:bg-gray-100/50 rounded-full p-1 transition-colors"
             >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={userHasRespected ? 0 : 2}
-                d="M2 10.5a1.5 1.5 0 113 0v6a1.5 1.5 0 01-3 0v-6zM6 10.333v5.43a2 2 0 001.106 1.79l.05.025A4 4 0 008.943 18h5.416a2 2 0 001.962-1.608l1.2-6A2 2 0 0015.56 8H12V4a2 2 0 00-2-2 1 1 0 00-1 1v.667a4 4 0 01-.8 2.4L6.8 7.933a4 4 0 00-.8 2.4z"
-              />
-            </svg>
-            <span>
-              {respectCount > 0 ? `${respectCount} ${respectCount === 1 ? 'respect' : 'respects'}` : 'Respect'}
-            </span>
-          </button>
+              <svg
+                className="w-3.5 h-3.5"
+                fill={userHasRespected ? 'currentColor' : 'none'}
+                stroke="currentColor"
+                viewBox="0 0 20 20"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={userHasRespected ? 0 : 2}
+                  d="M2 10.5a1.5 1.5 0 113 0v6a1.5 1.5 0 01-3 0v-6zM6 10.333v5.43a2 2 0 001.106 1.79l.05.025A4 4 0 008.943 18h5.416a2 2 0 001.962-1.608l1.2-6A2 2 0 0015.56 8H12V4a2 2 0 00-2-2 1 1 0 00-1 1v.667a4 4 0 01-.8 2.4L6.8 7.933a4 4 0 00-.8 2.4z"
+                />
+              </svg>
+            </button>
+            {respectCount > 0 ? (
+              <button
+                onClick={() => setShowRespecters(true)}
+                className="hover:underline transition-colors"
+              >
+                {respectCount} {respectCount === 1 ? 'respect' : 'respects'}
+              </button>
+            ) : (
+              <button
+                onClick={() => onToggleRespect?.(task.id)}
+                disabled={!currentUserId}
+                className="hover:text-purple-600 transition-colors"
+              >
+                Respect
+              </button>
+            )}
+          </div>
 
           {/* Proof Gallery Button - Only show if there are proofs */}
           {proofCount > 0 && (
@@ -532,6 +549,67 @@ export default function ActionCard({
                   </svg>
                 </button>
               </motion.div>
+            </>
+          )}
+        </AnimatePresence>
+
+        {/* Respecters Modal */}
+        <AnimatePresence>
+          {showRespecters && (
+            <>
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                onClick={() => setShowRespecters(false)}
+                className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50"
+              />
+              <div className="fixed inset-0 z-50 flex items-center justify-center p-4" onClick={() => setShowRespecters(false)}>
+                <motion.div
+                  initial={{ opacity: 0, scale: 0.95, y: 10 }}
+                  animate={{ opacity: 1, scale: 1, y: 0 }}
+                  exit={{ opacity: 0, scale: 0.95, y: 10 }}
+                  transition={{ type: 'spring', duration: 0.3 }}
+                  onClick={(e) => e.stopPropagation()}
+                  className="bg-white rounded-xl shadow-2xl w-full max-w-sm overflow-hidden"
+                >
+                  {/* Header */}
+                  <div className="flex items-center justify-between px-4 py-3 border-b border-gray-100">
+                    <h3 className="text-sm font-bold text-gray-900">Respects</h3>
+                    <button
+                      onClick={() => setShowRespecters(false)}
+                      className="p-1 rounded-full hover:bg-gray-100 transition-colors"
+                      aria-label="Close"
+                    >
+                      <svg className="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                      </svg>
+                    </button>
+                  </div>
+
+                  {/* User List */}
+                  <div className="max-h-[60vh] overflow-y-auto">
+                    {(task.respects || []).map((respect) => (
+                      <div key={respect.id} className="flex items-center gap-3 px-4 py-3 hover:bg-gray-50">
+                        {respect.fromUser?.profileImage ? (
+                          <img
+                            src={respect.fromUser.profileImage}
+                            alt={respect.fromUser.name || 'User'}
+                            className="w-8 h-8 rounded-full object-cover"
+                          />
+                        ) : (
+                          <div className={`w-8 h-8 rounded-full bg-gradient-to-br ${respect.fromUser?.avatarColor || 'from-purple-400 to-blue-500'} flex items-center justify-center text-white text-xs font-bold`}>
+                            {respect.fromUser?.name?.charAt(0).toUpperCase() || '?'}
+                          </div>
+                        )}
+                        <span className="text-sm font-medium text-gray-900">
+                          {respect.fromUser?.name || 'Anonymous'}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                </motion.div>
+              </div>
             </>
           )}
         </AnimatePresence>
