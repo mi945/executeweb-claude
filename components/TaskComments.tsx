@@ -248,21 +248,46 @@ export default function TaskComments({ taskId, compact = false, userProfile: use
                 : comment.text}
             </p>
 
-            {/* Reply Button */}
-            <button
-              onClick={() => {
-                if (isReply && rootParentId) {
-                  // Replying to a reply - link to root parent, mention this reply's author
-                  handleReply(rootParentId, comment.author?.name || 'Anonymous', true);
-                } else {
-                  // Replying to a parent comment
-                  handleReply(comment.id, comment.author?.name || 'Anonymous', false);
-                }
-              }}
-              className="text-xs font-semibold text-gray-500 hover:text-gray-700 mt-1 transition-colors"
-            >
-              Reply
-            </button>
+            {/* Actions: Reply + Like */}
+            <div className="flex items-center gap-3 mt-1">
+              <button
+                onClick={() => {
+                  if (isReply && rootParentId) {
+                    handleReply(rootParentId, comment.author?.name || 'Anonymous', true);
+                  } else {
+                    handleReply(comment.id, comment.author?.name || 'Anonymous', false);
+                  }
+                }}
+                className="text-xs font-semibold text-gray-500 hover:text-gray-700 transition-colors"
+              >
+                Reply
+              </button>
+
+              <button
+                onClick={() => handleToggleLike(comment)}
+                disabled={!user?.id}
+                className={`flex items-center gap-1 text-xs transition-colors ${
+                  userHasLiked
+                    ? 'text-red-500 font-semibold'
+                    : 'text-gray-400 hover:text-red-400'
+                }`}
+              >
+                <svg
+                  className="w-3 h-3"
+                  fill={userHasLiked ? 'currentColor' : 'none'}
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"
+                  />
+                </svg>
+                {likeCount > 0 && <span>{likeCount}</span>}
+              </button>
+            </div>
           </div>
         </div>
 
