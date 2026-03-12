@@ -273,6 +273,36 @@ export default function TaskDetailModal({ task, isOpen, onClose, activeUsers = [
                     </div>
                   )}
 
+                  {/* Respected By */}
+                  {(task.respects?.length ?? 0) > 0 && (
+                    <div>
+                      <h3 className="text-sm font-semibold text-gray-700 mb-3">Respected by ({task.respects!.length})</h3>
+                      <div className="flex flex-wrap gap-3">
+                        {task.respects!.slice(0, 10).map((respect) => (
+                          <div key={respect.id} className="flex items-center gap-2">
+                            {respect.fromUser?.profileImage ? (
+                              <img
+                                src={respect.fromUser.profileImage}
+                                alt={respect.fromUser.name || 'User'}
+                                className="w-10 h-10 rounded-full border-2 border-purple-300 ring-2 ring-purple-100"
+                              />
+                            ) : (
+                              <div className={`w-10 h-10 rounded-full bg-gradient-to-br ${respect.fromUser?.avatarColor || 'from-purple-400 to-blue-400'} flex items-center justify-center text-white font-bold border-2 border-purple-300`}>
+                                {(respect.fromUser?.name || 'A')[0].toUpperCase()}
+                              </div>
+                            )}
+                            <span className="text-sm font-medium text-gray-700">{respect.fromUser?.name || 'Anonymous'}</span>
+                          </div>
+                        ))}
+                        {task.respects!.length > 10 && (
+                          <div className="flex items-center justify-center w-10 h-10 rounded-full bg-gray-100 text-gray-600 text-sm font-semibold">
+                            +{task.respects!.length - 10}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  )}
+
                   {/* Proof Gallery */}
                   {validProofs.length > 0 && (
                     <div>

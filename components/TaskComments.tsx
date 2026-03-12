@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import db from '@/lib/db';
 import { id } from '@instantdb/react';
+import { trackEvent } from '@/lib/analytics';
 
 interface Comment {
   id: string;
@@ -21,6 +22,10 @@ interface Comment {
   parentComment?: {
     id: string;
   };
+  likes?: Array<{
+    id: string;
+    fromUser?: { id: string };
+  }>;
 }
 
 interface TaskCommentsProps {
