@@ -30,6 +30,8 @@ export type AnalyticsEvent =
   | 'task_completed'
   | 'task_uncompleted'
   | 'task_reverted'
+  | 'task_edited'
+  | 'task_deleted'
 
   // Friend events
   | 'friend_request_sent'
@@ -55,6 +57,8 @@ export type AnalyticsEvent =
 
   // Engagement events
   | 'comment_created'
+  | 'comment_edited'
+  | 'comment_deleted'
   | 'comment_like_given'
   | 'comment_like_removed'
   | 'external_link_clicked'

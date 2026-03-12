@@ -13,6 +13,7 @@ const schema = i.schema({
       eventDate: i.string().optional(),
       eventTime: i.string().optional(),
       eventLocation: i.string().optional(),
+      editedAt: i.number().optional(),
     }),
 
     // User executions of tasks (many-to-many junction)
@@ -41,6 +42,8 @@ const schema = i.schema({
       text: i.string(),
       createdAt: i.number(),
       mentionedUser: i.string().optional(), // @username for reply-to-reply
+      editedAt: i.number().optional(),
+      isDeleted: i.boolean().optional(),
     }),
 
     // Friend relationships (directional edges)
