@@ -56,7 +56,7 @@ export default function AuthForm() {
                 placeholder="Enter code"
                 value={code}
                 onChange={(e) => setCode(e.target.value)}
-                className="w-full px-4 py-3 rounded-xl border-2 border-gray-200 focus:border-purple-500 focus:outline-none text-lg text-center font-mono tracking-widest"
+                className="w-full px-4 py-3 rounded-xl border-2 border-gray-200 focus:border-purple-500 focus:outline-none text-lg text-gray-900 text-center font-mono tracking-widest"
                 maxLength={6}
                 autoFocus
                 disabled={isLoading}
@@ -106,7 +106,7 @@ export default function AuthForm() {
               placeholder="Enter your email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              className="w-full px-4 py-3 rounded-xl border-2 border-gray-200 focus:border-purple-500 focus:outline-none text-lg"
+              className="w-full px-4 py-3 rounded-xl border-2 border-gray-200 focus:border-purple-500 focus:outline-none text-lg text-gray-900"
               required
               disabled={isLoading}
             />

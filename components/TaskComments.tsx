@@ -360,7 +360,7 @@ export default function TaskComments({ taskId, compact = false, userProfile: use
                 value={commentText}
                 onChange={(e) => setCommentText(e.target.value)}
                 placeholder="Add a comment..."
-                className="flex-1 px-3 py-2 text-sm rounded-lg border border-gray-200 focus:border-purple-400 focus:outline-none transition-colors"
+                className="flex-1 px-3 py-2 text-sm text-gray-900 rounded-lg border border-gray-200 focus:border-purple-400 focus:outline-none transition-colors"
                 disabled={isSubmitting}
               />
               <motion.button
