@@ -36,6 +36,11 @@ interface Task {
     completed: boolean;
     completedAt?: number;
   }>;
+  comments?: Array<{ id: string }>;
+  respects?: Array<{
+    id: string;
+    fromUser?: { id: string };
+  }>;
 }
 
 export default function TaskFeed() {
@@ -94,12 +99,16 @@ export default function TaskFeed() {
     }
   }, [newTask.imageUrl]);
 
-  // Query all tasks with their executions and creator
+  // Query all tasks with their executions, creator, comments, and respects
   const { data } = db.useQuery({
     tasks: {
       creator: {},
       executions: {
         user: {},
+      },
+      comments: {},
+      respects: {
+        fromUser: {},
       },
     },
   });
@@ -108,12 +117,16 @@ export default function TaskFeed() {
 
   // Get current user's profile
   const { data: profileData } = db.useQuery({
-    profiles: {},
+    profiles: {
+      $: {
+        where: {
+          id: user?.id || '',
+        },
+      },
+    },
   });
 
-  const userProfile = profileData?.profiles?.find(
-    (p: any) => p.id === user?.id
-  );
+  const userProfile = profileData?.profiles?.[0];
 
   // Challenge invites hook
   const {
@@ -201,9 +214,6 @@ export default function TaskFeed() {
     const taskId = id();
 
     try {
-      // Animate delay for effect
-      await new Promise(resolve => setTimeout(resolve, 800));
-
       // Build transactions array
       const transactions: any[] = [
         db.tx.tasks[taskId].update({
