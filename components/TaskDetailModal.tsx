@@ -12,6 +12,7 @@ interface Task {
   imageUrl?: string | null;
   externalLink?: string | null;
   createdAt: number;
+  editedAt?: number;
   eventDate?: string | null;
   eventTime?: string | null;
   eventLocation?: string | null;
@@ -160,6 +161,9 @@ export default function TaskDetailModal({ task, isOpen, onClose, activeUsers = [
                 {/* Title */}
                 <h1 className="text-4xl font-bold text-gray-900 leading-tight">
                   {task.title}
+                  {task.editedAt && (
+                    <span className="text-sm font-normal text-gray-400 ml-2">(edited)</span>
+                  )}
                 </h1>
 
                 {/* Event Details (if present) */}

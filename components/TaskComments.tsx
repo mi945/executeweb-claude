@@ -10,6 +10,8 @@ interface Comment {
   id: string;
   text: string;
   createdAt: number;
+  editedAt?: number;
+  isDeleted?: boolean;
   mentionedUser?: string;
   author: {
     id: string;
@@ -37,15 +39,18 @@ interface TaskCommentsProps {
     profileImage?: string;
     avatarColor?: string;
   } | null;
+  taskCreatorId?: string;
 }
 
-export default function TaskComments({ taskId, compact = false, userProfile: userProfileProp }: TaskCommentsProps) {
+export default function TaskComments({ taskId, compact = false, userProfile: userProfileProp, taskCreatorId }: TaskCommentsProps) {
   const { user } = db.useAuth();
   const [commentText, setCommentText] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showAllComments, setShowAllComments] = useState(false);
   const [expandedThreads, setExpandedThreads] = useState<Set<string>>(new Set());
   const [replyingTo, setReplyingTo] = useState<{ commentId: string; authorName: string; isLevel1: boolean } | null>(null);
+  const [editingCommentId, setEditingCommentId] = useState<string | null>(null);
+  const [editText, setEditText] = useState('');
 
   // Query comments for this specific task with nested replies and authors
   const { data } = db.useQuery({
@@ -137,7 +142,6 @@ export default function TaskComments({ taskId, compact = false, userProfile: use
 
   const handleReply = (commentId: string, authorName: string, isLevel1: boolean) => {
     setReplyingTo({ commentId, authorName, isLevel1 });
-    // Don't pre-populate @mention in text - it's displayed separately via mentionedUser
     setCommentText('');
   };
 
@@ -171,6 +175,64 @@ export default function TaskComments({ taskId, compact = false, userProfile: use
     }
   };
 
+  // Edit comment
+  const handleStartEdit = (comment: Comment) => {
+    setEditingCommentId(comment.id);
+    setEditText(comment.text);
+  };
+
+  const handleSaveEdit = async (commentId: string) => {
+    if (!editText.trim()) return;
+    try {
+      await db.transact([
+        db.tx.comments[commentId].update({
+          text: editText.trim(),
+          editedAt: Date.now(),
+        }),
+      ]);
+      trackEvent('comment_edited', { commentId });
+      setEditingCommentId(null);
+      setEditText('');
+    } catch (err: any) {
+      alert('Error saving comment: ' + err.message);
+    }
+  };
+
+  const handleCancelEdit = () => {
+    setEditingCommentId(null);
+    setEditText('');
+  };
+
+  // Delete comment
+  const handleDeleteComment = async (comment: Comment) => {
+    if (!confirm('Delete this comment?')) return;
+
+    const hasReplies = (comment.replies?.length || 0) > 0;
+
+    try {
+      if (hasReplies) {
+        // Soft delete - preserve thread
+        await db.transact([
+          db.tx.comments[comment.id].update({
+            isDeleted: true,
+          }),
+        ]);
+      } else {
+        // Hard delete - remove comment and its likes
+        const transactions: any[] = [];
+        const commentLikes = comment.likes || [];
+        for (const like of commentLikes) {
+          transactions.push(db.tx.commentLikes[like.id].delete());
+        }
+        transactions.push(db.tx.comments[comment.id].delete());
+        await db.transact(transactions);
+      }
+      trackEvent('comment_deleted', { commentId: comment.id, soft: hasReplies });
+    } catch (err: any) {
+      alert('Error deleting comment: ' + err.message);
+    }
+  };
+
   const getTimeAgo = (timestamp: number) => {
     const seconds = Math.floor((Date.now() - timestamp) / 1000);
 
@@ -197,6 +259,83 @@ export default function TaskComments({ taskId, compact = false, userProfile: use
     const displayedReplies = threadExpanded ? comment.replies : comment.replies?.slice(0, 2);
     const likeCount = comment.likes?.length || 0;
     const userHasLiked = comment.likes?.some((l) => l.fromUser?.id === user?.id) || false;
+
+    const isCommentAuthor = user?.id && comment.author?.id === user.id;
+    const isTaskCreator = user?.id && taskCreatorId === user.id;
+    const canEdit = isCommentAuthor && !comment.isDeleted;
+    const canDelete = (isCommentAuthor || isTaskCreator) && !comment.isDeleted;
+    const isEditing = editingCommentId === comment.id;
+    const isDeleted = comment.isDeleted;
+
+    // Soft-deleted comment display
+    if (isDeleted) {
+      return (
+        <div className={isReply ? 'relative' : ''}>
+          {isReply && (
+            <div
+              className="absolute left-2 top-0 w-0.5 bg-gray-200"
+              style={{ height: isLastReply ? '20px' : 'calc(100% + 12px)' }}
+            />
+          )}
+          <div className={`flex gap-3 ${isReply ? 'pl-8' : ''}`}>
+            {/* Gray placeholder avatar */}
+            <div
+              className={`${isReply ? 'w-6 h-6' : 'w-8 h-8'} rounded-full bg-gray-200 flex-shrink-0`}
+            />
+            <div className="flex-1 min-w-0">
+              <span className="text-xs text-gray-400 font-medium">[deleted]</span>
+              <p className="text-sm text-gray-400 italic mt-0.5">[deleted]</p>
+            </div>
+          </div>
+
+          {/* Nested Replies still shown */}
+          {replyCount > 0 && (
+            <div className="mt-3 space-y-3">
+              <AnimatePresence>
+                {displayedReplies?.map((reply, index) => (
+                  <motion.div
+                    key={reply.id}
+                    initial={{ opacity: 0, y: -10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -10 }}
+                  >
+                    <CommentItem
+                      comment={reply}
+                      isReply
+                      isLastReply={index === displayedReplies.length - 1 && (!threadExpanded || replyCount <= 2)}
+                      rootParentId={comment.id}
+                    />
+                  </motion.div>
+                ))}
+              </AnimatePresence>
+
+              {replyCount > 2 && (
+                <button
+                  onClick={() => toggleThread(comment.id)}
+                  className="pl-8 text-xs font-semibold text-gray-500 hover:text-gray-700 flex items-center gap-1 transition-colors"
+                >
+                  {threadExpanded ? (
+                    <>
+                      Hide replies
+                      <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" />
+                      </svg>
+                    </>
+                  ) : (
+                    <>
+                      View {replyCount - 2} more {replyCount - 2 === 1 ? 'reply' : 'replies'}
+                      <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                      </svg>
+                    </>
+                  )}
+                </button>
+              )}
+            </div>
+          )}
+        </div>
+      );
+    }
 
     return (
       <div className={isReply ? 'relative' : ''}>
@@ -236,58 +375,108 @@ export default function TaskComments({ taskId, compact = false, userProfile: use
               <span className="text-xs text-gray-400">
                 {getTimeAgo(comment.createdAt)}
               </span>
-            </div>
-
-            <p className="text-sm text-gray-700 mt-0.5 break-words">
-              {comment.mentionedUser && (
-                <span className="text-blue-600 font-semibold">@{comment.mentionedUser} </span>
+              {comment.editedAt && (
+                <span className="text-xs text-gray-400">(edited)</span>
               )}
-              {/* Strip duplicate @mention from text if it matches mentionedUser */}
-              {comment.mentionedUser && comment.text.startsWith(`@${comment.mentionedUser} `)
-                ? comment.text.slice(comment.mentionedUser.length + 2)
-                : comment.text}
-            </p>
-
-            {/* Actions: Reply + Like */}
-            <div className="flex items-center gap-3 mt-1">
-              <button
-                onClick={() => {
-                  if (isReply && rootParentId) {
-                    handleReply(rootParentId, comment.author?.name || 'Anonymous', true);
-                  } else {
-                    handleReply(comment.id, comment.author?.name || 'Anonymous', false);
-                  }
-                }}
-                className="text-xs font-semibold text-gray-500 hover:text-gray-700 transition-colors"
-              >
-                Reply
-              </button>
-
-              <button
-                onClick={() => handleToggleLike(comment)}
-                disabled={!user?.id}
-                className={`flex items-center gap-1 text-xs transition-colors ${
-                  userHasLiked
-                    ? 'text-red-500 font-semibold'
-                    : 'text-gray-400 hover:text-red-400'
-                }`}
-              >
-                <svg
-                  className="w-3 h-3"
-                  fill={userHasLiked ? 'currentColor' : 'none'}
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"
-                  />
-                </svg>
-                {likeCount > 0 && <span>{likeCount}</span>}
-              </button>
             </div>
+
+            {/* Inline edit mode */}
+            {isEditing ? (
+              <div className="mt-1">
+                <textarea
+                  value={editText}
+                  onChange={(e) => setEditText(e.target.value)}
+                  className="w-full px-2 py-1.5 text-sm text-gray-900 rounded-lg border border-purple-300 focus:border-purple-500 focus:outline-none resize-none"
+                  rows={2}
+                  autoFocus
+                />
+                <div className="flex gap-2 mt-1">
+                  <button
+                    onClick={() => handleSaveEdit(comment.id)}
+                    disabled={!editText.trim()}
+                    className="text-xs font-semibold text-purple-600 hover:text-purple-700 disabled:text-gray-400"
+                  >
+                    Save
+                  </button>
+                  <button
+                    onClick={handleCancelEdit}
+                    className="text-xs font-semibold text-gray-500 hover:text-gray-700"
+                  >
+                    Cancel
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <>
+                <p className="text-sm text-gray-700 mt-0.5 break-words">
+                  {comment.mentionedUser && (
+                    <span className="text-blue-600 font-semibold">@{comment.mentionedUser} </span>
+                  )}
+                  {comment.mentionedUser && comment.text.startsWith(`@${comment.mentionedUser} `)
+                    ? comment.text.slice(comment.mentionedUser.length + 2)
+                    : comment.text}
+                </p>
+
+                {/* Actions: Reply + Like + Edit + Delete */}
+                <div className="flex items-center gap-3 mt-1">
+                  <button
+                    onClick={() => {
+                      if (isReply && rootParentId) {
+                        handleReply(rootParentId, comment.author?.name || 'Anonymous', true);
+                      } else {
+                        handleReply(comment.id, comment.author?.name || 'Anonymous', false);
+                      }
+                    }}
+                    className="text-xs font-semibold text-gray-500 hover:text-gray-700 transition-colors"
+                  >
+                    Reply
+                  </button>
+
+                  <button
+                    onClick={() => handleToggleLike(comment)}
+                    disabled={!user?.id}
+                    className={`flex items-center gap-1 text-xs transition-colors ${
+                      userHasLiked
+                        ? 'text-red-500 font-semibold'
+                        : 'text-gray-400 hover:text-red-400'
+                    }`}
+                  >
+                    <svg
+                      className="w-3 h-3"
+                      fill={userHasLiked ? 'currentColor' : 'none'}
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"
+                      />
+                    </svg>
+                    {likeCount > 0 && <span>{likeCount}</span>}
+                  </button>
+
+                  {canEdit && (
+                    <button
+                      onClick={() => handleStartEdit(comment)}
+                      className="text-xs font-semibold text-gray-400 hover:text-gray-600 transition-colors"
+                    >
+                      Edit
+                    </button>
+                  )}
+
+                  {canDelete && (
+                    <button
+                      onClick={() => handleDeleteComment(comment)}
+                      className="text-xs font-semibold text-gray-400 hover:text-red-500 transition-colors"
+                    >
+                      Delete
+                    </button>
+                  )}
+                </div>
+              </>
+            )}
           </div>
         </div>
 
