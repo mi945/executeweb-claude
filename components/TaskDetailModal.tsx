@@ -35,6 +35,15 @@ interface Task {
     proofUploadedAt?: number;
     proofExpiresAt?: number;
   }>;
+  respects?: Array<{
+    id: string;
+    fromUser?: {
+      id: string;
+      name?: string;
+      profileImage?: string | null;
+      avatarColor?: string | null;
+    };
+  }>;
 }
 
 interface TaskDetailModalProps {
