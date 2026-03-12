@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { getRelativeTime } from '@/lib/time';
 import TaskComments from './TaskComments';
+import FormattedDescription from './FormattedDescription';
 import Link from 'next/link';
 
 interface Task {
@@ -251,13 +252,12 @@ export default function ActionCard({
 
         {/* Description (compact with 2-line clamp) */}
         <div className="relative mb-3">
-          <p
+          <FormattedDescription
+            text={task.description}
             className={`text-sm text-gray-600 leading-snug ${
               !expanded && descriptionNeedsExpansion ? 'line-clamp-2' : ''
             }`}
-          >
-            {task.description}
-          </p>
+          />
           {descriptionNeedsExpansion && (
             <button
               onClick={() => setExpanded(!expanded)}

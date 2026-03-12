@@ -687,10 +687,29 @@ export default function TaskFeed() {
                     onChange={(e) =>
                       setNewTask({ ...newTask, description: e.target.value })
                     }
+                    maxLength={2200}
                     className="w-full px-4 py-3 rounded-xl border-2 border-gray-200 focus:border-purple-500 focus:outline-none resize-none text-lg text-black font-medium"
                     rows={4}
                     required
                   />
+                  <div className="flex items-center justify-between mt-1.5">
+                    <p className="text-xs text-gray-400">
+                      <span className="font-medium">**bold**</span>{' '}
+                      <span className="text-purple-500">#hashtags</span>{' '}
+                      <span className="text-blue-500">@mentions</span>{' '}
+                      URLs auto-link{' '}
+                      <span className="font-medium">- bullet lists</span>
+                    </p>
+                    <span className={`text-xs font-medium ${
+                      newTask.description.length > 2100
+                        ? 'text-red-500'
+                        : newTask.description.length > 2000
+                        ? 'text-amber-500'
+                        : 'text-gray-400'
+                    }`}>
+                      {newTask.description.length}/2200
+                    </span>
+                  </div>
                 </div>
 
                 {/* Drag & Drop Image Upload */}
