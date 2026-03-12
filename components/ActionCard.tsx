@@ -70,6 +70,8 @@ export default function ActionCard({
   onRevert,
   onChallengeFriend,
   onToggleRespect,
+  onEditTask,
+  onDeleteTask,
   isExecuting,
   isCompleting,
   onClick,
@@ -79,6 +81,9 @@ export default function ActionCard({
   const [showProofs, setShowProofs] = useState(false);
   const [selectedProof, setSelectedProof] = useState<string | null>(null);
   const [showRespecters, setShowRespecters] = useState(false);
+  const [showMenu, setShowMenu] = useState(false);
+
+  const isCreator = currentUserId && task.creator?.id === currentUserId;
 
   // Comment count from task data (loaded by parent query)
   const commentCount = task.comments?.length || 0;
