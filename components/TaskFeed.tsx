@@ -540,6 +540,25 @@ export default function TaskFeed() {
     setTimeout(() => setChallengeTask(null), 300);
   };
 
+  const handleToggleRespect = async (taskId: string) => {
+    if (!user?.id) return;
+    const task = tasks.find(t => t.id === taskId);
+    const existingRespect = (task as any)?.respects?.find((r: any) => r.fromUser?.id === user.id);
+
+    if (existingRespect) {
+      await db.transact([db.tx.respects[existingRespect.id].delete()]);
+      trackEvent('respect_removed', { taskId });
+    } else {
+      const respectId = id();
+      await db.transact([
+        db.tx.respects[respectId].update({ createdAt: Date.now() }),
+        db.tx.tasks[taskId].link({ respects: respectId }),
+        db.tx.profiles[user.id].link({ givenRespects: respectId }),
+      ]);
+      trackEvent('respect_given', { taskId });
+    }
+  };
+
   const handleCloseModal = () => {
     setIsModalOpen(false);
     setTimeout(() => setSelectedTask(null), 300); // Delay clearing task until animation completes
@@ -930,6 +949,7 @@ export default function TaskFeed() {
                 onComplete={handleComplete}
                 onRevert={handleRevert}
                 onChallengeFriend={handleChallengeFriend}
+                onToggleRespect={handleToggleRespect}
                 isExecuting={executingTaskId === task.id}
                 isCompleting={isCompleting}
                 showCelebration={showCelebration}
